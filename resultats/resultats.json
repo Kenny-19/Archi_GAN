@@ -1,0 +1,1182 @@
+{
+  "config": {
+    "n_vectors": 20000,
+    "test_ratio": 0.1,
+    "batch_size": 128,
+    "latent_dim": 32,
+    "lr": 0.0002,
+    "lambda": 15.0,
+    "epochs": 200,
+    "abl_epochs": 60,
+    "abl_lambdas": [
+      0.0,
+      1.0,
+      5.0,
+      15.0,
+      50.0
+    ],
+    "sl_clients": 3,
+    "sl_epochs": 100,
+    "sl_noise_std": 0.5,
+    "eval_variants": 50,
+    "eval_test_conds": 2000,
+    "grid_size": 60,
+    "layout_tries": 5,
+    "placement_fallback": true,
+    "placement": "v3"
+  },
+  "quick": false,
+  "device": "cuda",
+  "torch": "2.11.0+cu130",
+  "gpu": "Tesla T4",
+  "dataset_gen": {
+    "tried": 20415,
+    "kept": 20000,
+    "acceptance": 0.9796718099436689,
+    "time_s": 41.49689698219299
+  },
+  "dataset": {
+    "n": 20000,
+    "n_train": 18000,
+    "n_test": 2000,
+    "n_unique": 984,
+    "max_per_room": {
+      "salon": 1.0,
+      "chambre": 4.0,
+      "douche": 2.0,
+      "toilettes": 2.0,
+      "couloir": 1.0,
+      "bureau": 1.0,
+      "cuisine": 1.0,
+      "balcon": 1.0,
+      "dressing": 1.0,
+      "sdb_suite": 1.0,
+      "wc_dans_sdb": 2.0,
+      "dressing_suite": 1.0,
+      "balcon_chambre": 1.0,
+      "cuisine_fermee": 1.0,
+      "bureau_sejour": 1.0
+    },
+    "n_unique_pieces": 104,
+    "topo_mean": {
+      "sdb_suite": 0.1501999944448471,
+      "wc_dans_sdb": 0.3375999927520752,
+      "dressing_suite": 0.30344998836517334,
+      "balcon_chambre": 0.12404999881982803,
+      "cuisine_fermee": 0.2511500120162964,
+      "bureau_sejour": 0.15115000307559967
+    },
+    "mean_rooms": 8.276650428771973,
+    "chambres_hist": {
+      "0": 1045,
+      "1": 4714,
+      "2": 7035,
+      "3": 5129,
+      "4": 2077
+    }
+  },
+  "central_training": {
+    "params_G": 34319,
+    "params_D": 30721,
+    "epochs": 200,
+    "time_s": 519.0650434494019,
+    "final": {
+      "d_loss": 1.3689067695822035,
+      "g_adv": 0.7191588793482099,
+      "g_constraint": 0.00033511700946421897,
+      "d_acc": 0.5579799107142858
+    }
+  },
+  "eval_vectors": {
+    "cgan_snap": {
+      "respect_brut": 0.999569227994228,
+      "plausibilite": 0.9365,
+      "diversite": 0.39000000000000007
+    },
+    "cgan_brut": {
+      "respect_brut": 0.999569227994228,
+      "plausibilite": 0.936
+    },
+    "aleatoire": {
+      "respect_brut": 1.0,
+      "plausibilite": 0.422,
+      "diversite": 0.742
+    },
+    "prior": {
+      "respect_brut": 1.0,
+      "plausibilite": 0.999,
+      "diversite": 0.405
+    }
+  },
+  "eval_plans": {
+    "cgan_snap": {
+      "respect_brut": {
+        "mean": 0.9843160173160174,
+        "ci95": 0.0036507430383382533
+      },
+      "respect_plan": {
+        "mean": 0.9996883116883117,
+        "ci95": 0.0004377480451760233
+      },
+      "plausibilite": {
+        "mean": 0.8045454545454546,
+        "ci95": 0.023445279003315278
+      },
+      "diversite": {
+        "mean": 0.519090909090909,
+        "ci95": 0.01020608861811275
+      },
+      "diversite_graphe": {
+        "mean": 0.3209090909090909,
+        "ci95": 0.009204147088679473
+      },
+      "placement": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "connectivite": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "connexe": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "portes_legales": {
+        "mean": 0.9912619047619048,
+        "ci95": 0.0023403569642125605
+      },
+      "adjacence": {
+        "mean": 0.8905006685233958,
+        "ci95": 0.009952221259244281
+      },
+      "compacite": {
+        "mean": 0.7394329745499246,
+        "ci95": 0.0033219705198957628
+      },
+      "sans_porte_interdite": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "acces_direct": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "portes_piece_privee": {
+        "mean": 1.2240655581791946,
+        "ci95": 0.010279534522575821
+      },
+      "entree": {
+        "mean": 0.9990909090909091,
+        "ci95": 0.0017818181818181815
+      },
+      "t_cgan": {
+        "mean": 3.116625363666323e-05,
+        "ci95": 2.988067179349219e-07
+      },
+      "t_layout": {
+        "mean": 0.002150402465455169,
+        "ci95": 8.107014108606051e-05
+      },
+      "t_total": {
+        "mean": 0.002426908082727137,
+        "ci95": 8.066054600135889e-05,
+        "min": 0.0006707070601305531,
+        "max": 0.01277005138016193,
+        "median": 0.002110841770067964
+      },
+      "respect_graphe": {
+        "mean": 0.994,
+        "ci95": 0.0087512942014769
+      },
+      "t_render": {
+        "mean": 0.21276022227273603,
+        "ci95": 0.0
+      },
+      "ecart_surface": {
+        "mean": 0.045842402159244254,
+        "ci95": 0.0
+      }
+    },
+    "cgan_brut": {
+      "respect_brut": {
+        "mean": 0.9843160173160174,
+        "ci95": 0.0036507430383382533
+      },
+      "respect_plan": {
+        "mean": 0.984004329004329,
+        "ci95": 0.0036722434663693996
+      },
+      "plausibilite": {
+        "mean": 0.8472727272727273,
+        "ci95": 0.021268023769951523
+      },
+      "diversite": {
+        "mean": 0.5227272727272727,
+        "ci95": 0.01005437613924417
+      },
+      "diversite_graphe": {
+        "mean": 0.31272727272727274,
+        "ci95": 0.00842597447476223
+      },
+      "placement": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "connectivite": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "connexe": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "portes_legales": {
+        "mean": 0.9911796536796537,
+        "ci95": 0.00236078801597754
+      },
+      "adjacence": {
+        "mean": 0.8901305714487533,
+        "ci95": 0.009938462166908898
+      },
+      "compacite": {
+        "mean": 0.7361163239995259,
+        "ci95": 0.0033454569270311833
+      },
+      "sans_porte_interdite": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "acces_direct": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "portes_piece_privee": {
+        "mean": 1.2277604617604618,
+        "ci95": 0.010046155734576755
+      },
+      "entree": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "t_cgan": {
+        "mean": 3.101006545400444e-05,
+        "ci95": 5.062708138833301e-07
+      },
+      "t_layout": {
+        "mean": 0.003104980669092625,
+        "ci95": 0.00011742641120674626
+      },
+      "t_total": {
+        "mean": 0.0033114132345562295,
+        "ci95": 0.00011853578133114075,
+        "min": 0.0006042132800257605,
+        "max": 0.015345728639913432,
+        "median": 0.002966679679959725
+      },
+      "respect_graphe": {
+        "mean": 0.994,
+        "ci95": 0.0087512942014769
+      },
+      "ecart_surface": {
+        "mean": 0.04987659919028341,
+        "ci95": 0.0
+      }
+    },
+    "aleatoire": {
+      "respect_brut": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "respect_plan": {
+        "mean": 0.9978701298701299,
+        "ci95": 0.0012030012126640647
+      },
+      "plausibilite": {
+        "mean": 0.17,
+        "ci95": 0.022208576985474442
+      },
+      "diversite": {
+        "mean": 0.8954545454545455,
+        "ci95": 0.007477967356762714
+      },
+      "diversite_graphe": {
+        "mean": 0.4590909090909091,
+        "ci95": 0.009523157126778646
+      },
+      "placement": {
+        "mean": 0.9998484848484849,
+        "ci95": 0.00029696969696969686
+      },
+      "connectivite": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "connexe": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "portes_legales": {
+        "mean": 0.9852738095238095,
+        "ci95": 0.00309166959038633
+      },
+      "adjacence": {
+        "mean": 0.9357633477633478,
+        "ci95": 0.008152224534170381
+      },
+      "compacite": {
+        "mean": 0.7371178049366222,
+        "ci95": 0.0033331948683275425
+      },
+      "sans_porte_interdite": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "acces_direct": {
+        "mean": 0.999283189033189,
+        "ci95": 0.0005803807001835435
+      },
+      "portes_piece_privee": {
+        "mean": 1.2205632296995934,
+        "ci95": 0.011092736554915798
+      },
+      "entree": {
+        "mean": 0.9972727272727273,
+        "ci95": 0.003083390153066384
+      },
+      "t_cgan": {
+        "mean": 3.1953418186441758e-06,
+        "ci95": 1.819599114654574e-07
+      },
+      "t_layout": {
+        "mean": 0.002790015064544853,
+        "ci95": 0.00014660262446574213
+      },
+      "t_total": {
+        "mean": 0.003033493997284867,
+        "ci95": 0.00015030255053844022,
+        "min": 0.00045230992010601766,
+        "max": 0.019465969539946854,
+        "median": 0.002314295080016109
+      },
+      "respect_graphe": {
+        "mean": 0.954,
+        "ci95": 0.02572195899027111
+      },
+      "ecart_surface": {
+        "mean": 0.05572475033738191,
+        "ci95": 0.0
+      }
+    },
+    "prior": {
+      "respect_brut": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "respect_plan": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "plausibilite": {
+        "mean": 0.9545454545454546,
+        "ci95": 0.012315277200883898
+      },
+      "diversite": {
+        "mean": 0.4718181818181818,
+        "ci95": 0.012628557531904902
+      },
+      "diversite_graphe": {
+        "mean": 0.2927272727272727,
+        "ci95": 0.007976504952519428
+      },
+      "placement": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "connectivite": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "connexe": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "portes_legales": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "adjacence": {
+        "mean": 0.8935107897153352,
+        "ci95": 0.008907535803859452
+      },
+      "compacite": {
+        "mean": 0.7422516234398898,
+        "ci95": 0.0034479613356545114
+      },
+      "sans_porte_interdite": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "acces_direct": {
+        "mean": 0.9997474747474747,
+        "ci95": 0.0002883476757690508
+      },
+      "portes_piece_privee": {
+        "mean": 1.2381645021645022,
+        "ci95": 0.009899124674774825
+      },
+      "entree": {
+        "mean": 0.9990909090909091,
+        "ci95": 0.0017818181818181815
+      },
+      "t_cgan": {
+        "mean": 0.0006609119399993026,
+        "ci95": 7.931097185324562e-06
+      },
+      "t_layout": {
+        "mean": 0.0018661490909118005,
+        "ci95": 6.316205344543391e-05
+      },
+      "t_total": {
+        "mean": 0.0026869586218274642,
+        "ci95": 6.422395145851804e-05,
+        "min": 0.001100720540043767,
+        "max": 0.014961310300122932,
+        "median": 0.0025860350000561994
+      },
+      "respect_graphe": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "ecart_surface": {
+        "mean": 0.0524144939271255,
+        "ci95": 0.0
+      }
+    },
+    "cgan_snap_1essai": {
+      "respect_brut": {
+        "mean": 0.9843160173160174,
+        "ci95": 0.0036507430383382533
+      },
+      "respect_plan": {
+        "mean": 0.9995584415584415,
+        "ci95": 0.0005060965791563952
+      },
+      "plausibilite": {
+        "mean": 0.8045454545454546,
+        "ci95": 0.023445279003315278
+      },
+      "diversite": {
+        "mean": 0.519090909090909,
+        "ci95": 0.01020608861811275
+      },
+      "diversite_graphe": {
+        "mean": 0.32545454545454544,
+        "ci95": 0.009352817829273762
+      },
+      "placement": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "connectivite": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "connexe": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "portes_legales": {
+        "mean": 0.9911709956709956,
+        "ci95": 0.0023639387376557463
+      },
+      "adjacence": {
+        "mean": 0.8937080545716909,
+        "ci95": 0.010005147466478131
+      },
+      "compacite": {
+        "mean": 0.7357187491043083,
+        "ci95": 0.0033799378605073537
+      },
+      "sans_porte_interdite": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "acces_direct": {
+        "mean": 0.9929063688836416,
+        "ci95": 0.0017754482366777442
+      },
+      "portes_piece_privee": {
+        "mean": 1.2355306309851763,
+        "ci95": 0.010681044857140541
+      },
+      "entree": {
+        "mean": 0.9990909090909091,
+        "ci95": 0.0017818181818181815
+      },
+      "t_cgan": {
+        "mean": 3.0555668182304626e-05,
+        "ci95": 3.143670127501348e-07
+      },
+      "t_layout": {
+        "mean": 0.0017731982863640704,
+        "ci95": 4.058191959668844e-05
+      },
+      "t_total": {
+        "mean": 0.001952868227301265,
+        "ci95": 4.1491239145907294e-05,
+        "min": 0.0006285607201425591,
+        "max": 0.005264512099920467,
+        "median": 0.0018980757800090941
+      },
+      "respect_graphe": {
+        "mean": 0.992,
+        "ci95": 0.009569810630415215
+      },
+      "ecart_surface": {
+        "mean": 0.04674771929824561,
+        "ci95": 0.0
+      }
+    },
+    "cgan_snap_graphe_regles": {
+      "respect_brut": {
+        "mean": 0.9843160173160174,
+        "ci95": 0.0036507430383382533
+      },
+      "respect_plan": {
+        "mean": 0.9755324675324676,
+        "ci95": 0.003759098472996368
+      },
+      "plausibilite": {
+        "mean": 0.8236363636363636,
+        "ci95": 0.02253354412032714
+      },
+      "diversite": {
+        "mean": 0.22,
+        "ci95": 0.004743266339197369
+      },
+      "diversite_graphe": {
+        "mean": 0.14,
+        "ci95": 0.0036358633124246825
+      },
+      "placement": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "connectivite": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "connexe": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "portes_legales": {
+        "mean": 0.9923398268398268,
+        "ci95": 0.0022114064480226667
+      },
+      "adjacence": {
+        "mean": 0.9209072871572872,
+        "ci95": 0.007019321265574316
+      },
+      "compacite": {
+        "mean": 0.7374960044146438,
+        "ci95": 0.003294554484962804
+      },
+      "sans_porte_interdite": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "acces_direct": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "portes_piece_privee": {
+        "mean": 1.2466233438278893,
+        "ci95": 0.009142107050210874
+      },
+      "entree": {
+        "mean": 0.9981818181818182,
+        "ci95": 0.00251872473917525
+      },
+      "t_cgan": {
+        "mean": 3.309445636349747e-05,
+        "ci95": 3.7458260882150723e-07
+      },
+      "t_layout": {
+        "mean": 0.0023230780054512416,
+        "ci95": 8.411125493364447e-05
+      },
+      "t_total": {
+        "mean": 0.0025194224617875577,
+        "ci95": 8.482661220408837e-05,
+        "min": 0.0006600721800759856,
+        "max": 0.012653384800069034,
+        "median": 0.0021462927698462407
+      },
+      "respect_graphe": {
+        "mean": 0.508,
+        "ci95": 0.05609231266904805
+      },
+      "ecart_surface": {
+        "mean": 0.0484979487179487,
+        "ci95": 0.0
+      }
+    },
+    "cgan_snap_placement_v2": {
+      "respect_brut": {
+        "mean": 0.9843160173160174,
+        "ci95": 0.0036507430383382533
+      },
+      "respect_plan": {
+        "mean": 0.9783549783549783,
+        "ci95": 0.00352892164067863
+      },
+      "plausibilite": {
+        "mean": 0.8045454545454546,
+        "ci95": 0.023445279003315278
+      },
+      "diversite": {
+        "mean": 0.519090909090909,
+        "ci95": 0.01020608861811275
+      },
+      "diversite_graphe": {
+        "mean": 0.39545454545454545,
+        "ci95": 0.010239998799152427
+      },
+      "placement": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "connectivite": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "connexe": {
+        "mean": 1.0,
+        "ci95": 0.0
+      },
+      "portes_legales": {
+        "mean": 0.9871642120505757,
+        "ci95": 0.0023654661645096916
+      },
+      "adjacence": {
+        "mean": 0.8943445746173019,
+        "ci95": 0.008257522404713032
+      },
+      "compacite": {
+        "mean": 0.6370958870139424,
+        "ci95": 0.004546260675196132
+      },
+      "sans_porte_interdite": {
+        "mean": 0.9645454545454546,
+        "ci95": 0.010933382335398019
+      },
+      "acces_direct": {
+        "mean": 0.9863150284059375,
+        "ci95": 0.002426207415227424
+      },
+      "portes_piece_privee": {
+        "mean": 1.6986121933621934,
+        "ci95": 0.02087006400562227
+      },
+      "entree": {
+        "mean": 0.0,
+        "ci95": 0.0
+      },
+      "t_cgan": {
+        "mean": 3.203128636331795e-05,
+        "ci95": 2.853673121142455e-07
+      },
+      "t_layout": {
+        "mean": 0.038274270161819626,
+        "ci95": 0.0020099162239944385
+      },
+      "t_total": {
+        "mean": 0.03846347176636858,
+        "ci95": 0.0020101910638112654,
+        "min": 0.0009651232201258608,
+        "max": 0.2097938829198847,
+        "median": 0.02765425202014967
+      },
+      "respect_graphe": {
+        "mean": 0.52,
+        "ci95": 0.0595171791878101
+      },
+      "ecart_surface": {
+        "mean": 0.20471006747638323,
+        "ci95": 0.0
+      }
+    }
+  },
+  "eval_plans_per_prompt": {
+    "studio": {
+      "respect_brut": 0.9866666666666667,
+      "respect_plan": 1.0,
+      "plausibilite": 0.8,
+      "diversite": 0.32,
+      "diversite_graphe": 0.08,
+      "n_pieces": 5.24,
+      "connectivite": 1.0,
+      "portes_legales": 0.9626666666666667,
+      "t_total": 0.002226257559968872
+    },
+    "studio avec balcon": {
+      "respect_brut": 1.0,
+      "respect_plan": 1.0,
+      "plausibilite": 0.62,
+      "diversite": 0.22000000000000003,
+      "diversite_graphe": 0.08,
+      "n_pieces": 5.62,
+      "connectivite": 1.0,
+      "portes_legales": 0.9304761904761905,
+      "t_total": 0.0031502037401014604
+    },
+    "T2": {
+      "respect_brut": 1.0,
+      "respect_plan": 1.0,
+      "plausibilite": 0.68,
+      "diversite": 0.6000000000000001,
+      "diversite_graphe": 0.35999999999999993,
+      "n_pieces": 6.42,
+      "connectivite": 1.0,
+      "portes_legales": 0.9864761904761906,
+      "t_total": 0.001874103699801708
+    },
+    "T2 avec bureau": {
+      "respect_brut": 1.0,
+      "respect_plan": 1.0,
+      "plausibilite": 0.46,
+      "diversite": 0.56,
+      "diversite_graphe": 0.3999999999999999,
+      "n_pieces": 7.5,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.002074140980025732
+    },
+    "T3": {
+      "respect_brut": 0.9933333333333333,
+      "respect_plan": 1.0,
+      "plausibilite": 0.94,
+      "diversite": 0.6200000000000001,
+      "diversite_graphe": 0.48,
+      "n_pieces": 8.34,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.0019150169199838275
+    },
+    "T3 avec balcon": {
+      "respect_brut": 1.0,
+      "respect_plan": 1.0,
+      "plausibilite": 0.82,
+      "diversite": 0.66,
+      "diversite_graphe": 0.6200000000000001,
+      "n_pieces": 8.82,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.002691562320073899
+    },
+    "T3 avec bureau et dressing": {
+      "respect_brut": 1.0,
+      "respect_plan": 1.0,
+      "plausibilite": 0.76,
+      "diversite": 0.56,
+      "diversite_graphe": 0.34,
+      "n_pieces": 9.72,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.0027906713399579535
+    },
+    "T4": {
+      "respect_brut": 0.98,
+      "respect_plan": 1.0,
+      "plausibilite": 1.0,
+      "diversite": 0.64,
+      "diversite_graphe": 0.4200000000000001,
+      "n_pieces": 9.64,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.0021114171001454453
+    },
+    "T4 avec 2 douches et un bureau": {
+      "respect_brut": 0.992,
+      "respect_plan": 1.0,
+      "plausibilite": 0.98,
+      "diversite": 0.58,
+      "diversite_graphe": 0.32,
+      "n_pieces": 10.9,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.002886220960067476
+    },
+    "T5 avec balcon": {
+      "respect_brut": 1.0,
+      "respect_plan": 1.0,
+      "plausibilite": 0.86,
+      "diversite": 0.64,
+      "diversite_graphe": 0.52,
+      "n_pieces": 11.52,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.0033061811001789464
+    },
+    "un salon, deux chambres, une douche": {
+      "respect_brut": 1.0,
+      "respect_plan": 1.0,
+      "plausibilite": 1.0,
+      "diversite": 0.58,
+      "diversite_graphe": 0.34,
+      "n_pieces": 8.16,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.0022615227601454537
+    },
+    "appartement 3 chambres sans balcon": {
+      "respect_brut": 0.985,
+      "respect_plan": 1.0,
+      "plausibilite": 0.98,
+      "diversite": 0.5,
+      "diversite_graphe": 0.35999999999999993,
+      "n_pieces": 8.9,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.0022124718998929897
+    },
+    "grand appartement avec bureau": {
+      "respect_brut": 1.0,
+      "respect_plan": 1.0,
+      "plausibilite": 0.76,
+      "diversite": 0.86,
+      "diversite_graphe": 0.4600000000000001,
+      "n_pieces": 10.08,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.002392532659910103
+    },
+    "appart 5 chambres sans balcon": {
+      "respect_brut": 0.75,
+      "respect_plan": 1.0,
+      "plausibilite": 0.0,
+      "diversite": 0.5,
+      "diversite_graphe": 0.37999999999999995,
+      "n_pieces": 11.3,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.003307729539933462
+    },
+    "studio de 30 m2": {
+      "respect_brut": 1.0,
+      "respect_plan": 1.0,
+      "plausibilite": 0.82,
+      "diversite": 0.32,
+      "diversite_graphe": 0.08,
+      "n_pieces": 5.12,
+      "connectivite": 1.0,
+      "portes_legales": 0.9663333333333333,
+      "t_total": 0.00198440758009383
+    },
+    "T3 de 65 m² avec balcon": {
+      "respect_brut": 0.995,
+      "respect_plan": 1.0,
+      "plausibilite": 0.92,
+      "diversite": 0.56,
+      "diversite_graphe": 0.4600000000000001,
+      "n_pieces": 8.68,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.00203897889993641
+    },
+    "T4 de 95 m2": {
+      "respect_brut": 0.9866666666666666,
+      "respect_plan": 1.0,
+      "plausibilite": 0.98,
+      "diversite": 0.7999999999999998,
+      "diversite_graphe": 0.4200000000000001,
+      "n_pieces": 9.66,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.002515688419912294
+    },
+    "T4 avec suite parentale": {
+      "respect_brut": 0.992,
+      "respect_plan": 1.0,
+      "plausibilite": 1.0,
+      "diversite": 0.58,
+      "diversite_graphe": 0.30000000000000004,
+      "n_pieces": 10.16,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.0026611164199448465
+    },
+    "T3 avec cuisine fermée": {
+      "respect_brut": 1.0,
+      "respect_plan": 1.0,
+      "plausibilite": 0.9,
+      "diversite": 0.5,
+      "diversite_graphe": 0.28,
+      "n_pieces": 8.32,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.0020132835999584126
+    },
+    "T2 avec wc séparés": {
+      "respect_brut": 1.0,
+      "respect_plan": 0.996,
+      "plausibilite": 0.84,
+      "diversite": 0.32,
+      "diversite_graphe": 0.16,
+      "n_pieces": 6.2,
+      "connectivite": 1.0,
+      "portes_legales": 0.9904761904761905,
+      "t_total": 0.0018347127398419618
+    },
+    "studio avec wc dans la salle de bain": {
+      "respect_brut": 1.0,
+      "respect_plan": 1.0,
+      "plausibilite": 0.86,
+      "diversite": 0.14,
+      "diversite_graphe": 0.04,
+      "n_pieces": 4.88,
+      "connectivite": 1.0,
+      "portes_legales": 0.9713333333333333,
+      "t_total": 0.0023739794001676274
+    },
+    "T3 avec chambre avec dressing et coin bureau": {
+      "respect_brut": 0.9942857142857143,
+      "respect_plan": 0.9971428571428572,
+      "plausibilite": 0.72,
+      "diversite": 0.35999999999999993,
+      "diversite_graphe": 0.16,
+      "n_pieces": 9.82,
+      "connectivite": 1.0,
+      "portes_legales": 1.0,
+      "t_total": 0.0027697781799543007
+    }
+  },
+  "eval_topo_prompts": {
+    "T4 avec suite parentale": {
+      "cgan_snap": 1.0,
+      "cgan_snap_graphe_regles": 1.0
+    },
+    "T3 avec cuisine fermée": {
+      "cgan_snap": 1.0,
+      "cgan_snap_graphe_regles": 0.0
+    },
+    "T2 avec wc séparés": {
+      "cgan_snap": 0.98,
+      "cgan_snap_graphe_regles": 0.08
+    },
+    "studio avec wc dans la salle de bain": {
+      "cgan_snap": 1.0,
+      "cgan_snap_graphe_regles": 1.0
+    },
+    "T3 avec chambre avec dressing et coin bureau": {
+      "cgan_snap": 0.99,
+      "cgan_snap_graphe_regles": 0.46
+    }
+  },
+  "ablation_lambda": {
+    "0.0": {
+      "respect_brut": 0.9470349400599402,
+      "plausibilite": 0.932,
+      "plausibilite_snap": 0.924,
+      "diversite": 0.38799999999999996,
+      "d_acc_final": 0.5952008928571428
+    },
+    "1.0": {
+      "respect_brut": 0.9703345376845377,
+      "plausibilite": 0.8945,
+      "plausibilite_snap": 0.9075,
+      "diversite": 0.35300000000000004,
+      "d_acc_final": 0.5392299107142857
+    },
+    "5.0": {
+      "respect_brut": 0.9942632034632035,
+      "plausibilite": 0.9445,
+      "plausibilite_snap": 0.951,
+      "diversite": 0.342,
+      "d_acc_final": 0.5301897321428571
+    },
+    "15.0": {
+      "respect_brut": 0.9984539502164502,
+      "plausibilite": 0.938,
+      "plausibilite_snap": 0.948,
+      "diversite": 0.36599999999999994,
+      "d_acc_final": 0.5394810267857143
+    },
+    "50.0": {
+      "respect_brut": 0.999568253968254,
+      "plausibilite": 0.934,
+      "plausibilite_snap": 0.9435,
+      "diversite": 0.341,
+      "d_acc_final": 0.5731863839285715
+    }
+  },
+  "split": {
+    "clients": {
+      "A (0-1 ch.)": 5525,
+      "B (2 ch.)": 6230,
+      "C (3-4 ch.)": 6245
+    },
+    "epochs": 100,
+    "runs": {
+      "centralise": {
+        "eval": {
+          "global": {
+            "respect_brut": 0.9995073717948718,
+            "plausibilite": 0.9445
+          },
+          "propre": {
+            "respect_brut": 0.9996096543455238,
+            "plausibilite": 0.952611251360107
+          },
+          "etranger": {
+            "respect_brut": 0.9996130309132116,
+            "plausibilite": 0.953614759164739
+          }
+        }
+      },
+      "local": {
+        "eval": {
+          "global": {
+            "respect_brut": 0.9695799797424799,
+            "plausibilite": 0.9556666666666667
+          },
+          "propre": {
+            "respect_brut": 0.9752410081204843,
+            "plausibilite": 0.9884269747966218
+          },
+          "etranger": {
+            "respect_brut": 0.9364100854327521,
+            "plausibilite": 0.940898489975166
+          }
+        },
+        "time_s": 262.9192943572998
+      },
+      "SL": {
+        "eval": {
+          "global": {
+            "respect_brut": 0.9342799510674512,
+            "plausibilite": 0.8473333333333333
+          },
+          "propre": {
+            "respect_brut": 0.8931273604957601,
+            "plausibilite": 0.9615669802832857
+          },
+          "etranger": {
+            "respect_brut": 0.9023046074506821,
+            "plausibilite": 0.8992936620897279
+          }
+        },
+        "time_s": 261.6874635219574,
+        "bytes_total": 3736320000,
+        "bytes_per_epoch": 37363200.0,
+        "bytes_per_sample": 2100.0,
+        "bytes_by_kind": {
+          "up_e": 455475200,
+          "down_v_hat": 213504000,
+          "up_s": 1366425600,
+          "down_grad_s": 1366425600,
+          "up_grad_v_hat": 106752000,
+          "down_grad_e": 227737600
+        },
+        "noise_std": 0.0,
+        "final_g_constraint": 0.002566200330109744
+      },
+      "SplitFed": {
+        "eval": {
+          "global": {
+            "respect_brut": 0.9788638000888,
+            "plausibilite": 0.956
+          },
+          "propre": {
+            "respect_brut": 0.9646040589449606,
+            "plausibilite": 0.9878149480427988
+          },
+          "etranger": {
+            "respect_brut": 0.9644471367411452,
+            "plausibilite": 0.9875290584343174
+          }
+        },
+        "time_s": 260.24089312553406,
+        "bytes_total": 3736320000,
+        "bytes_per_epoch": 37363200.0,
+        "bytes_per_sample": 2100.0,
+        "bytes_by_kind": {
+          "up_e": 455475200,
+          "down_v_hat": 213504000,
+          "up_s": 1366425600,
+          "down_grad_s": 1366425600,
+          "up_grad_v_hat": 106752000,
+          "down_grad_e": 227737600
+        },
+        "noise_std": 0.0,
+        "final_g_constraint": 0.0037045343318391297
+      },
+      "SplitFed+bruit": {
+        "eval": {
+          "global": {
+            "respect_brut": 0.9575634892884893,
+            "plausibilite": 0.9819999999999999
+          },
+          "propre": {
+            "respect_brut": 0.9306560781639357,
+            "plausibilite": 0.9884886227069117
+          },
+          "etranger": {
+            "respect_brut": 0.9308549156087199,
+            "plausibilite": 0.9884896594551352
+          }
+        },
+        "time_s": 266.66200971603394,
+        "bytes_total": 3736320000,
+        "bytes_per_epoch": 37363200.0,
+        "bytes_per_sample": 2100.0,
+        "bytes_by_kind": {
+          "up_e": 455475200,
+          "down_v_hat": 213504000,
+          "up_s": 1366425600,
+          "down_grad_s": 1366425600,
+          "up_grad_v_hat": 106752000,
+          "down_grad_e": 227737600
+        },
+        "noise_std": 0.5,
+        "final_g_constraint": 0.006861259963149004
+      }
+    },
+    "params_client": 18208,
+    "params_server": 38800,
+    "client_param_share": 0.3193937692955375,
+    "fl_bytes_per_epoch": 1368192,
+    "splitfed_sync_bytes_per_epoch": 436992,
+    "raw_data_bytes": 1080000,
+    "splitfed_plans": {
+      "respect_plan": 1.0,
+      "plausibilite": 0.9272727272727272,
+      "connectivite": 1.0,
+      "portes_legales": 0.9956060606060606,
+      "adjacence": 0.9030339105339106,
+      "t_total": 0.0022268079772857167
+    }
+  },
+  "leakage": {
+    "SL": {
+      "exact": 0.46687498688697815,
+      "par_entree": 0.9489166736602783,
+      "baseline_exact": 0.030625000596046448,
+      "baseline_par_entree": 0.6945000290870667
+    },
+    "SplitFed": {
+      "exact": 0.5287500023841858,
+      "par_entree": 0.9504166841506958,
+      "baseline_exact": 0.030625000596046448,
+      "baseline_par_entree": 0.6945000290870667
+    },
+    "SplitFed+bruit": {
+      "exact": 0.0043750000186264515,
+      "par_entree": 0.6799166798591614,
+      "baseline_exact": 0.030625000596046448,
+      "baseline_par_entree": 0.6945000290870667
+    }
+  }
+}

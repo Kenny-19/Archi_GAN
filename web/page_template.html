@@ -1,0 +1,422 @@
+<title>ArchiGAN-SL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Mise en page : table à dessin. Panneau de requête à gauche, planche à droite, cartouche technique dessous. */
+:root {
+  --bg: #eef0ec;          /* papier calque */
+  --panel: #f8f9f6;
+  --sheet: #ffffff;       /* planche */
+  --ink: #1b2124;         /* graphite */
+  --muted: #5b6569;
+  --rule: #cfd5d1;
+  --accent: #2c49c9;      /* encre bleue de tireur de plans */
+  --accent-soft: #e4e8fb;
+  --given: #8a5a00;       /* valeur imposée par la requête */
+  --given-soft: #f6ecd9;
+  --ok: #1f7a4d;
+  --warn: #a4501c;
+  --plan-paper: #ffffff;
+  --plan-balcony: #eef1f6;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111517; --panel: #171c1f; --sheet: #1b2124; --ink: #e5e9ea; --muted: #98a3a7;
+    --rule: #2d3539; --accent: #93a6ff; --accent-soft: #232b48; --given: #e2b45c; --given-soft: #3a3020;
+    --ok: #62c795; --warn: #f0a070; --plan-paper: #1b2124; --plan-balcony: #222a33;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111517; --panel: #171c1f; --sheet: #1b2124; --ink: #e5e9ea; --muted: #98a3a7;
+  --rule: #2d3539; --accent: #93a6ff; --accent-soft: #232b48; --given: #e2b45c; --given-soft: #3a3020;
+  --ok: #62c795; --warn: #f0a070; --plan-paper: #1b2124; --plan-balcony: #222a33;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-display); font-size: 15px;
+       line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 20px 40px;
+        display: grid; gap: 18px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px;
+             border-bottom: 1px solid var(--rule); padding-bottom: 14px; }
+header.top h1 { margin: 0; font-size: 1.75rem; font-weight: 800; font-stretch: 112%;
+                letter-spacing: -0.01em; }
+.beta { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+        border: 1px solid var(--accent); color: var(--accent); padding: 1px 7px; border-radius: 3px; }
+header.top p { margin: 0; color: var(--muted); flex-basis: 100%; max-width: 70ch; text-wrap: pretty; }
+
+.layout { display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 18px;
+         display: grid; gap: 16px; min-width: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+           color: var(--muted); margin: 0 0 6px; }
+label.eyebrow { display: block; }
+textarea { width: 100%; min-height: 84px; resize: vertical; font: inherit; font-size: 1.02rem; color: var(--ink);
+           background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 10px 12px; }
+textarea:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: inherit; font-size: 0.84rem; color: var(--ink); background: transparent; border: 1px solid var(--rule);
+        border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+#n { width: 100%; font: inherit; color: var(--ink); background: var(--sheet);
+       border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; font-variant-numeric: tabular-nums; }
+.go { font: inherit; font-weight: 700; font-stretch: 110%; letter-spacing: 0.02em; color: #fff; background: var(--accent);
+      border: 0; border-radius: 4px; padding: 11px 14px; cursor: pointer; }
+:root[data-theme="dark"] .go { color: #0f1424; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .go { color: #0f1424; } }
+.go:hover { filter: brightness(1.08); }
+.hint { font-size: 0.82rem; color: var(--muted); margin: 0; }
+
+.sheet { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; min-width: 0;
+         display: grid; grid-template-rows: auto 1fr auto; }
+.sheet-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline;
+              padding: 12px 16px; border-bottom: 1px solid var(--rule); }
+.sheet-head .q { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.sheet-head .meta { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.plan-zone { padding: 10px 16px; display: grid; place-items: center; min-height: 420px; }
+.plan-zone svg { width: 100%; max-height: 640px; color: var(--ink); }
+.variants { display: flex; gap: 8px; padding: 0 16px 14px; flex-wrap: wrap; }
+.variants button { font: inherit; font-family: var(--font-mono); font-size: 0.78rem; background: transparent;
+  color: var(--muted); border: 1px solid var(--rule); border-radius: 4px; padding: 4px 9px; cursor: pointer; }
+.variants button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+
+/* plan */
+.plan-svg .room { fill: var(--plan-paper); stroke: var(--ink); }
+.plan-svg .room.balcon { fill: var(--plan-balcony); }
+.plan-svg .wall { stroke: var(--ink); stroke-linecap: square; }
+.plan-svg .gap { fill: var(--plan-paper); }
+.plan-svg .leaf, .plan-svg .swing { stroke: var(--ink); fill: none; }
+.plan-svg .entry { stroke: var(--accent); }
+.plan-svg .entry-label { fill: var(--accent); font-family: var(--font-mono); letter-spacing: 0.1em; }
+.plan-svg .label { fill: var(--ink); font-family: var(--font-mono); letter-spacing: 0.06em; }
+.plan-svg .area { fill: var(--muted); font-family: var(--font-mono); }
+
+/* cartouche */
+.cartouche { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 960px) { .cartouche { grid-template-columns: minmax(0, 1fr); } }
+.cartouche section { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; min-width: 0; }
+.cartouche h2 { font-size: 0.95rem; font-weight: 700; margin: 0 0 4px; }
+.cartouche .sub { font-size: 0.82rem; color: var(--muted); margin: 0 0 10px; }
+table.prog { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+table.prog td { padding: 4px 0; border-bottom: 1px dashed var(--rule); font-size: 0.9rem; }
+table.prog td.n { text-align: right; font-family: var(--font-mono); width: 2.5em; }
+table.prog td.src { text-align: right; width: 7.5em; }
+.tag { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase;
+       padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+.tag.given { color: var(--given); background: var(--given-soft); }
+.tag.model { color: var(--accent); background: var(--accent-soft); }
+.legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 0.8rem; color: var(--muted); }
+ul.topo { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+ul.topo li { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; border-bottom: 1px dashed var(--rule); padding-bottom: 4px; }
+ul.topo li.off { color: var(--muted); }
+dl.metrics { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; margin: 0; font-size: 0.9rem; }
+dl.metrics dt { color: var(--muted); }
+dl.metrics dd { margin: 0; text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.good { color: var(--ok); } .bad { color: var(--warn); }
+
+/* retours */
+.feedback { display: grid; grid-template-columns: minmax(260px, 360px) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 860px) { .feedback { grid-template-columns: minmax(0, 1fr); } }
+.feedback h2 { font-size: 1.15rem; font-weight: 800; font-stretch: 108%; margin: 0 0 4px; }
+.fb-form { display: grid; gap: 12px; }
+.fb-types { display: flex; flex-wrap: wrap; gap: 6px; border: 0; padding: 0; margin: 0; }
+.fb-types legend { padding: 0; margin-bottom: 6px; }
+.fb-types label { font-size: 0.85rem; border: 1px solid var(--rule); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.fb-types input { position: absolute; opacity: 0; pointer-events: none; }
+.fb-types input:checked + span { color: var(--accent); }
+.fb-types label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.fb-types label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fb-attach { display: flex; gap: 8px; align-items: flex-start; font-size: 0.86rem; color: var(--muted); }
+.fb-attach input { margin-top: 3px; accent-color: var(--accent); }
+.fb-status { font-size: 0.84rem; margin: 0; min-height: 1.2em; }
+.fb-status.err { color: var(--warn); } .fb-status.okmsg { color: var(--ok); }
+.fb-list { display: grid; gap: 10px; min-width: 0; }
+.fb-empty { color: var(--muted); font-size: 0.92rem; border: 1px dashed var(--rule); border-radius: 6px; padding: 16px; margin: 0; }
+.fb-item { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; min-width: 0; }
+.fb-head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; font-size: 0.84rem; color: var(--muted); }
+.fb-head .who { color: var(--ink); font-weight: 600; }
+.fb-head .del { margin-left: auto; font: inherit; font-size: 0.8rem; color: var(--muted); background: none; border: 0; cursor: pointer; text-decoration: underline; }
+.fb-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fb-ctx { font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); overflow-wrap: anywhere; }
+.tag.t-ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+.tag.t-bad { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.tag.t-note { color: var(--muted); background: color-mix(in srgb, var(--muted) 14%, transparent); }
+
+footer.about { border-top: 1px solid var(--rule); padding-top: 14px; color: var(--muted); font-size: 0.85rem;
+               display: grid; gap: 6px; max-width: 90ch; }
+footer.about p { margin: 0; text-wrap: pretty; }
+footer.about strong { color: var(--ink); font-weight: 600; }
+@media (prefers-reduced-motion: no-preference) { .plan-zone svg { animation: fade .25s ease-out; } }
+@keyframes fade { from { opacity: .4; } to { opacity: 1; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>ArchiGAN-SL</h1><span class="beta">version bêta</span>
+    <p>Décrivez un logement en quelques mots. Un GAN conditionnel complète le programme et le graphe de distribution, puis un algorithme de placement dessine le plan. Tout s'exécute dans votre navigateur.</p>
+  </header>
+
+  <div class="layout">
+    <form class="panel" id="form" autocomplete="off">
+      <div>
+        <label class="eyebrow" for="prompt">Requête</label>
+        <textarea id="prompt" name="prompt">T3 avec balcon et suite parentale</textarea>
+      </div>
+      <div>
+        <p class="eyebrow">Exemples</p>
+        <div class="chips" id="examples"></div>
+      </div>
+      <div>
+        <label class="eyebrow" for="n">Variantes</label>
+        <select id="n"><option value="1">1</option><option value="3" selected>3</option><option value="6">6</option></select>
+      </div>
+      <button class="go" type="submit">Générer le plan</button>
+      <p class="hint">Chaque clic propose de nouveaux plans pour la même requête.</p>
+    </form>
+
+    <article class="sheet" aria-live="polite">
+      <div class="sheet-head">
+        <span class="q" id="q"></span>
+        <span class="meta" id="meta"></span>
+      </div>
+      <div class="plan-zone" id="plan"></div>
+      <div class="variants" id="variants"></div>
+    </article>
+  </div>
+
+  <div class="cartouche">
+    <section>
+      <h2>Programme</h2>
+      <p class="sub">Nombre de pièces de chaque type.</p>
+      <table class="prog"><tbody id="prog"></tbody></table>
+      <div class="legend"><span><span class="tag given">requête</span> imposé par votre texte</span><span><span class="tag model">cGAN</span> proposé par le modèle</span></div>
+    </section>
+    <section>
+      <h2>Graphe de distribution</h2>
+      <p class="sub">Comment les pièces annexes sont desservies.</p>
+      <ul class="topo" id="topo"></ul>
+    </section>
+    <section>
+      <h2>Contrôle du plan</h2>
+      <p class="sub">Vérifications automatiques sur la variante affichée.</p>
+      <dl class="metrics" id="metrics"></dl>
+    </section>
+  </div>
+
+  <section class="feedback" aria-labelledby="fb-title">
+    <div class="panel">
+      <div>
+        <h2 id="fb-title">Retours</h2>
+        <p class="hint" id="fb-intro">Un plan vous semble juste, ou au contraire étrange ? Dites-le : chaque retour aide à améliorer le modèle.</p>
+      </div>
+      <form class="fb-form" id="fb-form" autocomplete="off">
+        <fieldset class="fb-types">
+          <legend class="eyebrow">Type de retour</legend>
+          <label><input type="radio" name="fbtype" value="reussi" id="fb-t1"><span>Plan réussi</span></label>
+          <label><input type="radio" name="fbtype" value="a_revoir" id="fb-t2"><span>Plan à revoir</span></label>
+          <label><input type="radio" name="fbtype" value="remarque" id="fb-t3" checked><span>Remarque</span></label>
+        </fieldset>
+        <div>
+          <label class="eyebrow" for="fb-text">Votre retour</label>
+          <textarea id="fb-text" maxlength="2000" placeholder="Ex. : la salle d'eau devrait être plus proche des chambres."></textarea>
+        </div>
+        <label class="fb-attach" for="fb-attach"><input type="checkbox" id="fb-attach" checked><span>Joindre la requête et le plan affichés</span></label>
+        <button class="go" type="submit" id="fb-send">Envoyer le retour</button>
+        <p class="fb-status" id="fb-status" role="status"></p>
+      </form>
+    </div>
+    <div class="fb-list" id="fb-list"><p class="fb-empty">Chargement des retours…</p></div>
+  </section>
+
+  <footer class="about">
+    <p><strong>Prototype de recherche.</strong> Kenny Tshibangu Ntumba, Université Nouveaux Horizons (Lubumbashi). Le modèle a été entraîné sur des programmes de logements générés et validés par l'algorithme de placement, et non sur des plans réels : les résultats sont des esquisses de principe, pas des plans d'exécution.</p>
+    <p>La requête comprend les typologies (studio, T1 à T6), les pièces (séjour, chambres, salle d'eau, WC, bureau, cuisine, balcon, dressing, couloir), les nombres, « sans … », une surface (« de 65 m² ») et des structures : suite parentale, cuisine fermée ou ouverte, WC séparés, WC dans la salle de bain, chambre avec dressing, coin bureau. Échelle : 1 cellule = 30 cm.</p>
+  </footer>
+</div>
+
+<script>
+/*__ENGINE__*/
+</script>
+<script>
+const MODEL = /*__MODEL__*/;
+(function () {
+  const A = ArchiGAN;
+  const EXAMPLES = ["T3 avec balcon", "T4 avec suite parentale et cuisine fermée", "studio de 30 m²",
+    "T2 avec wc séparés et coin bureau", "T3 de 65 m² avec chambre avec dressing", "appart 5 chambres sans balcon"];
+  const ROOM_FR = { salon: "Séjour", chambre: "Chambre", douche: "Salle d'eau", toilettes: "WC",
+    couloir: "Couloir", bureau: "Bureau", cuisine: "Cuisine", balcon: "Balcon", dressing: "Dressing" };
+  const TOPO_FR = {
+    sdb_suite: ["Salle d'eau en suite", "attachée à une chambre"],
+    wc_dans_sdb: ["WC dans la salle d'eau", "sinon sur la circulation"],
+    dressing_suite: ["Dressing attenant", "ouvert sur une chambre"],
+    balcon_chambre: ["Balcon de chambre", "sinon depuis le séjour"],
+    cuisine_fermee: ["Cuisine fermée", "desservie par le couloir"],
+    bureau_sejour: ["Bureau ouvert", "sur le séjour"],
+  };
+  const $ = (id) => document.getElementById(id);
+  const fmt = (x, d = 1) => x.toFixed(d).replace(".", ",");
+  let state = null, current = 0;
+
+  $("examples").innerHTML = EXAMPLES.map(e => `<button type="button" class="chip">${e}</button>`).join("");
+  $("examples").addEventListener("click", (ev) => {
+    const b = ev.target.closest(".chip"); if (!b) return;
+    $("prompt").value = b.textContent; run();
+  });
+  $("form").addEventListener("submit", (ev) => { ev.preventDefault(); run(); });
+  $("prompt").addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" && (ev.metaKey || ev.ctrlKey)) { ev.preventDefault(); run(); }
+  });
+
+  function run() {
+    const prompt = $("prompt").value.trim() || "T3";
+    const seed = Math.floor(Math.random() * 1e9);
+    state = A.planFromPrompt(MODEL, prompt, { n: parseInt($("n").value, 10), seed });
+    current = 0; render();
+  }
+
+  function render() {
+    const r = state.results[current], m = r.metrics, cons = state.cons;
+    $("q").textContent = "« " + state.prompt + " »";
+    $("meta").textContent = `${fmt(m.surface, 0)} m² · ${m.nbPieces} pièces · ${fmt(state.tTotal, 1)} ms`;
+    $("plan").innerHTML = A.renderSVG(r);
+    $("variants").innerHTML = state.results.length > 1 ? state.results.map((x, i) =>
+      `<button type="button" aria-pressed="${i === current}" data-i="${i}">Variante ${i + 1} · ${fmt(x.metrics.surface, 0)} m²</button>`).join("") : "";
+
+    const rows = A.GENERATIVE_ROOMS.map((name, i) => {
+      const n = r.pieces[name] || 0, given = cons[i] >= 0;
+      if (!n && !given) return "";
+      return `<tr><td>${ROOM_FR[name]}</td><td class="n">${n}</td><td class="src">${given
+        ? '<span class="tag given">requête</span>' : '<span class="tag model">cGAN</span>'}</td></tr>`;
+    }).join("");
+    $("prog").innerHTML = rows;
+
+    $("topo").innerHTML = A.TOPO_NAMES.map((k, i) => {
+      const v = r.topo[k], got = m.topoObtenue[k], given = cons[A.GENERATIVE_ROOMS.length + i] >= 0;
+      const [label, hint] = TOPO_FR[k];
+      const src = given ? '<span class="tag given">requête</span>' : (v ? '<span class="tag model">cGAN</span>' : "");
+      return `<li class="${v ? "" : "off"}"><span>${label} <small style="color:var(--muted)">· ${hint}</small></span>` +
+             `<span>${v ? "oui" + (v > 1 ? " ×" + v : "") : "non"}${got !== v ? ' <span class="bad">(non réalisé)</span>' : ""} ${src}</span></li>`;
+    }).join("");
+
+    const yes = (b) => b ? '<span class="good">oui</span>' : '<span class="bad">non</span>';
+    $("metrics").innerHTML = [
+      ["Surface habitable", fmt(m.surface, 1) + " m²" + (state.footprint.surface ? ` <small>(demandé ${fmt(state.footprint.surface, 0)})</small>` : "")],
+      ["Toutes les pièces accessibles", yes(m.connexe)],
+      ["Accès sans traverser une chambre", fmt(m.accesDirect * 100, 0) + " %"],
+      ["Portes interdites", m.portesInterdites ? `<span class="bad">${m.portesInterdites}</span>` : '<span class="good">0</span>'],
+      ["Portes par pièce privée", fmt(m.portesPiecePrivee, 2)],
+      ["Porte d'entrée", yes(m.entree)],
+      ["Compacité de l'emprise", fmt(m.compacite, 2)],
+    ].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+  }
+
+  window.__currentPlan = () => {
+    if (!state) return null;
+    const r = state.results[current];
+    const prog = A.GENERATIVE_ROOMS.filter(n => r.pieces[n]).map(n => `${ROOM_FR[n]} ${r.pieces[n]}`).join(", ");
+    const topo = A.TOPO_NAMES.filter(k => r.topo[k]).map(k => TOPO_FR[k][0]).join(", ");
+    return { requete: state.prompt, variante: current + 1, programme: prog, graphe: topo,
+             surface: Math.round(r.metrics.surface) };
+  };
+
+  $("variants").addEventListener("click", (ev) => {
+    const b = ev.target.closest("button[data-i]"); if (!b) return;
+    current = +b.dataset.i; render();
+  });
+  run();
+})();
+</script>
+<script>
+(async function () {
+  const $ = (id) => document.getElementById(id);
+  const list = $("fb-list"), form = $("fb-form"), status = $("fb-status");
+  const TYPES = { reussi: ["Plan réussi", "t-ok"], a_revoir: ["Plan à revoir", "t-bad"], remarque: ["Remarque", "t-note"] };
+  const say = (msg, cls) => { status.textContent = msg; status.className = "fb-status " + (cls || ""); };
+  const empty = (msg) => { list.innerHTML = ""; const p = document.createElement("p"); p.className = "fb-empty"; p.textContent = msg; list.append(p); };
+  const setFormEnabled = (on) => { for (const el of form.elements) el.disabled = !on; };
+
+  const db = window.claude ? await window.claude.use("db") : null;
+  const user = window.claude ? await window.claude.use("user") : null;
+  if (!db) {
+    setFormEnabled(false);
+    empty("Les retours sont visibles une fois connecté à claude.ai.");
+    say("Connectez-vous à claude.ai pour laisser un retour.");
+    return;
+  }
+  const myId = user ? await user.id() : null;
+  const canWrite = user ? await user.can("data.write") : null;
+  if (canWrite === false) {
+    setFormEnabled(false);
+    say("Vous pouvez lire les retours. Pour en laisser, demandez un accès « Contributeur » au propriétaire.");
+  }
+
+  const col = db.collection("retours");
+  let blocked = false;
+  let docs = [];
+  async function draw() {
+    if (!docs.length) { empty("Aucun retour pour l'instant. Soyez le premier à en laisser un."); return; }
+    const ids = [...new Set(docs.map(d => d.data().auteur).filter(Boolean))];
+    const people = user && ids.length ? await user.profiles(ids) : {};
+    list.innerHTML = "";
+    for (const d of docs) {
+      const v = d.data(), item = document.createElement("article"); item.className = "fb-item";
+      const head = document.createElement("div"); head.className = "fb-head";
+      const who = document.createElement("span"); who.className = "who";
+      who.textContent = (v.auteur && people[v.auteur] && people[v.auteur].name) || "Un visiteur";
+      const when = document.createElement("time");
+      const dt = new Date(v.cree || 0); when.dateTime = dt.toISOString();
+      when.textContent = dt.toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) + " à " +
+                         dt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+      const [tl, tc] = TYPES[v.type] || TYPES.remarque;
+      const tag = document.createElement("span"); tag.className = "tag " + tc; tag.textContent = tl;
+      head.append(who, when, tag);
+      if (myId && v.auteur === myId) {
+        const del = document.createElement("button"); del.type = "button"; del.className = "del"; del.textContent = "Supprimer";
+        del.addEventListener("click", async () => {
+          del.disabled = true;
+          try { await col.doc(d.id).delete(); } catch (e) { del.disabled = false; say("Suppression impossible pour le moment.", "err"); }
+        });
+        head.append(del);
+      }
+      const text = document.createElement("p"); text.className = "fb-text"; text.textContent = v.texte || "";
+      item.append(head, text);
+      if (v.contexte && v.contexte.requete) {
+        const c = v.contexte, ctx = document.createElement("div"); ctx.className = "fb-ctx";
+        ctx.textContent = `« ${c.requete} » · variante ${c.variante} · ${c.surface} m² · ${c.programme}` + (c.graphe ? ` · ${c.graphe}` : "");
+        item.append(ctx);
+      }
+      list.append(item);
+    }
+  }
+  col.orderBy("cree", "desc").limit(100).onSnapshot(
+    (snap) => { docs = snap.docs; draw(); },
+    () => { empty("Les retours ne peuvent pas être chargés pour le moment."); });
+
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const texte = $("fb-text").value.trim();
+    if (!texte) { say("Écrivez quelques mots avant d'envoyer.", "err"); $("fb-text").focus(); return; }
+    const type = (form.querySelector("input[name=fbtype]:checked") || {}).value || "remarque";
+    const body = { texte: texte.slice(0, 2000), type, auteur: myId, cree: Date.now() };
+    if ($("fb-attach").checked && window.__currentPlan) body.contexte = window.__currentPlan();
+    $("fb-send").disabled = true; say("Envoi…");
+    try {
+      await col.add(body);
+      $("fb-text").value = ""; say("Merci, votre retour est enregistré.", "okmsg");
+    } catch (e) {
+      if (e && e.code === "invalid_argument") { blocked = true; setFormEnabled(false); say("Votre accès ne permet pas de laisser un retour. Demandez un accès « Contributeur » au propriétaire.", "err"); }
+      else if (e && e.code === "quota_exceeded") say("La zone de retours est pleine. Prévenez le propriétaire de la page.", "err");
+      else say("L'envoi a échoué. Réessayez dans un instant.", "err");
+    } finally { if (canWrite !== false && !blocked) $("fb-send").disabled = false; }
+  });
+})();
+</script>
