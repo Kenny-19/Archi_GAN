@@ -48,14 +48,26 @@ Ouvrez `docs/index.html` dans un navigateur. Pour la reconstruire après un nouv
 ```bash
 python web/export_model.py models/cgan_final.pt web/model.json web/fwd_test.json
 node web/check_forward.js web/model.json web/fwd_test.json
-python web/build_page.py docs   # produit docs/index.html (version autonome)
+WEB3FORMS_KEY=... python web/build_page.py   # met à jour archigan_site/ et docs/
 ```
 
 `check_forward.js` vérifie que la passe avant JavaScript reproduit celle de PyTorch (écart maximal mesuré : 2 × 10⁻⁵).
 
 Le site est déployé sur **Vercel** (https://archigansite.vercel.app) à partir de ce dépôt : `vercel.json` indique que la page se trouve dans `docs/`, sans étape de construction. Chaque envoi sur `main` redéploie le site automatiquement.
 
-La section « Observations » envoie les retours des visiteurs par e-mail via [Web3Forms](https://web3forms.com). La clé publique du formulaire est injectée à l'assemblage : `WEB3FORMS_KEY=... python web/build_page.py docs`. Sans clé, le formulaire reste visible mais désactivé.
+### Mettre à jour le site
+
+Le site Vercel se redéploie automatiquement à chaque envoi sur `main`. Depuis ce dossier :
+
+```bash
+git pull                     # récupérer les derniers changements
+# ... modifier, puis éventuellement reconstruire la page (commande ci-dessus)
+git add -A
+git commit -m "Description de la modification"
+git push
+```
+
+La section « Observations » envoie les retours des visiteurs par e-mail via [Web3Forms](https://web3forms.com). La clé publique du formulaire est injectée à l'assemblage : `WEB3FORMS_KEY=... python web/build_page.py`. Sans clé, le formulaire reste visible mais désactivé.
 
 ## Résultats principaux
 

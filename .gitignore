@@ -4,3 +4,4 @@ __pycache__/
 .DS_Store
 archigan_runs/
 web/fwd_test.json
+web/archigan-sl.html

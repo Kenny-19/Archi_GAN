@@ -7,7 +7,7 @@ Produit deux fichiers a partir de page_template.html :
 La cle publique Web3Forms (envoi des observations par e-mail) est lue dans la
 variable d'environnement WEB3FORMS_KEY.
 """
-import os, sys
+import os, sys, datetime
 
 d = os.path.dirname(os.path.abspath(__file__))
 t = open(os.path.join(d, "page_template.html"), encoding="utf-8").read()
@@ -19,8 +19,11 @@ key = os.environ.get("WEB3FORMS_KEY", "").strip()
 if key:
     t = t.replace("__WEB3FORMS_KEY__", key)
 
-out_dir = sys.argv[1] if len(sys.argv) > 1 else d
-artifact = os.path.join(out_dir, "archigan-sl.html")
+root = os.path.normpath(os.path.join(d, ".."))
+# Le site est publie depuis archigan_site/ (Vercel) et docs/ : on ecrit les deux.
+out_dirs = sys.argv[1:] or [os.path.join(root, "archigan_site"), os.path.join(root, "docs")]
+version = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+artifact = os.path.join(d, "archigan-sl.html")          # version claude.ai
 open(artifact, "w", encoding="utf-8").write(t)
 
 cut = t.index("</style>") + len("</style>")
@@ -33,8 +36,14 @@ standalone = ('<!doctype html>\n<html lang="fr">\n<head>\n<meta charset="utf-8">
               '<meta name="description" content="Esquisses de logements 2D dessinées à partir d\'une phrase, '
               'par un GAN conditionnel et un algorithme de placement.">\n'
               f'<link rel="icon" href="{icon}">\n'
+              f'<meta name="version" content="{version}">\n'
               + head + "\n</head>\n<body>\n" + body + "\n</body>\n</html>\n")
-index = os.path.join(out_dir, "index.html")
-open(index, "w", encoding="utf-8").write(standalone)
-for p in (artifact, index):
-    print(os.path.normpath(p), round(os.path.getsize(p) / 1024), "Ko")
+written = [artifact]
+for od in out_dirs:
+    os.makedirs(od, exist_ok=True)
+    index = os.path.join(od, "index.html")
+    open(index, "w", encoding="utf-8").write(standalone)
+    written.append(index)
+for p in written:
+    print(os.path.relpath(p, root), round(os.path.getsize(p) / 1024), "Ko")
+print("version", version)
