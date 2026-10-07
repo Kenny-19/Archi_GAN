@@ -51,7 +51,9 @@ python web/build_page.py
 
 `check_forward.js` vérifie que la passe avant JavaScript reproduit celle de PyTorch (écart maximal mesuré : 2 × 10⁻⁵).
 
-La zone « Retours » de la page fonctionne uniquement dans sa version hébergée sur claude.ai. Ouverte ailleurs (localement ou sur GitHub Pages), la page génère les plans normalement et indique que les retours ne sont pas disponibles.
+Le site est déployé sur **Vercel** à partir de ce dépôt : `vercel.json` indique que la page se trouve dans `docs/`, sans étape de construction. Chaque envoi sur `main` redéploie le site automatiquement.
+
+La zone « Retours » de la page fonctionne uniquement dans sa version hébergée sur claude.ai. Ouverte ailleurs (localement ou sur Vercel), la page génère les plans normalement et indique que les retours ne sont pas disponibles.
 
 ## Résultats principaux
 
