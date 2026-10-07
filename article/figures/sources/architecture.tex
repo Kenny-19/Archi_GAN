@@ -1,0 +1,48 @@
+% Source de la figure 1 (pre-compilee dans figures/architecture.pdf pour
+% accelerer la compilation). Pour la modifier : compiler ce fichier
+% (pdflatex) puis remplacer figures/architecture.pdf.
+\documentclass[border=2pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{tgpagella}
+\usepackage[defaultsans,scale=0.85]{lato}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, fit, backgrounds}
+\begin{document}
+\begin{tikzpicture}[
+  node distance=4mm and 6mm,
+  box/.style={draw, rounded corners=2pt, align=center, font=\footnotesize,
+              minimum height=9mm, inner sep=3pt},
+  lbl/.style={font=\scriptsize, align=center},
+  arr/.style={-{Latex[length=2mm]}, thick}]
+  % --- Inférence ---
+  \node[box] (p) {Prompt\\\textit{« T3 avec balcon »}};
+  \node[box, right=of p] (parse) {Parser\\$\mathbf{k}\in\{-1,0,1,..\}^{15}$};
+  \node[box, right=of parse] (cond) {Condition\\$c=[\mathbf{v}\,|\,\mathbf{m}]$};
+  \node[box, right=of cond, fill=gray!12] (g) {cGAN\\$G(z,c)$};
+  \node[box, right=of g] (snap) {Snap +\\cohérence};
+  \node[box, right=of snap] (place) {Graphe de bulles\\+ placement};
+  \node[box, right=of place] (plan) {Plan 2D};
+  \foreach \a/\b in {p/parse, parse/cond, cond/g, g/snap, snap/place, place/plan}
+    \draw[arr] (\a) -- (\b);
+  % --- Split learning ---
+  \node[box, below=12mm of parse, minimum width=34mm] (E) {$E_k$ : encodeur\\de condition};
+  \node[box, below=3mm of E, minimum width=34mm] (B) {$B_k$ : bas du\\discriminateur};
+  \node[box, below=3mm of B, minimum width=34mm] (L) {perte de\\contraintes};
+  \node[box, right=32mm of E, minimum width=30mm, fill=gray!12] (Gs) {$G_s(z,e)$ :\\générateur};
+  \node[box, right=32mm of B, minimum width=30mm] (T) {$T(s)$ : haut du\\discriminateur};
+  \draw[arr] (E.east) -- node[lbl, above]{$e$ (32)} (Gs.west);
+  \draw[arr] (Gs.south west) -- node[lbl, sloped, above]{$\hat v$ (15)} (B.north east);
+  \draw[arr] (B.east) -- node[lbl, above]{$s$ (64)} (T.west);
+  \begin{scope}[on background layer]
+    \node[draw, dashed, fit=(E)(B)(L), inner sep=3mm,
+          label={[font=\footnotesize]below:Agence $k$ : $v$, $c$ restent locaux}] (cl) {};
+    \node[draw, dashed, fit=(Gs)(T), inner sep=3mm,
+          label={[font=\footnotesize]below:Serveur partagé}] (sv) {};
+  \end{scope}
+  \node[lbl, right=4mm of sv, text width=45mm, align=left]
+    {Les gradients remontent par le même chemin.\\
+     SplitFed : $E_k$ et $B_k$ moyennés\\à chaque époque.};
+\end{tikzpicture}
+\end{document}

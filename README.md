@@ -28,6 +28,7 @@ Projet de recherche de **Kenny Tshibangu Ntumba**, Université Nouveaux Horizons
 | `web/` | Sources de la démonstration : moteur JavaScript (portage du notebook), gabarit de page, scripts d'export et d'assemblage |
 | `models/cgan_final.pt` | Poids du générateur entraîné (PyTorch) |
 | `resultats/` | Résultats chiffrés de l'entraînement complet (`resultats.json`) et figures |
+| `article/` | Article (sources LaTeX, gabarit ICCK) et PDF compilé : `article/ArchiGAN-SL_article.pdf` |
 
 ## Utilisation
 
@@ -84,6 +85,12 @@ Entraînement complet sur 20 000 programmes (GPU Tesla T4), évaluation sur 22 r
 | Programmes reconstruits par une attaque par inversion : sans défense / avec bruit | 52,9 % / 0,4 % |
 
 Le détail figure dans `resultats/resultats.json`.
+
+## Article
+
+L'article qui présente ce travail est dans `article/`, avec le PDF compilé (`ArchiGAN-SL_article.pdf`). Il se compile avec pdfLaTeX, directement sur Overleaf ou en local (`pdflatex`, `bibtex`, puis deux fois `pdflatex`). Tous les chiffres viennent de `article/resultats_macros.tex`, produit par la cellule 15 du notebook. Les logos du gabarit sont provisoires (cadres gris).
+
+*Version de travail, non encore soumise.*
 
 ## Limites
 

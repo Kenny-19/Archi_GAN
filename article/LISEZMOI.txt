@@ -1,0 +1,25 @@
+Article : Génération de plans architecturaux 2D par cGAN piloté par prompt
+et entraîné en Split Learning
+Auteur : Kenny Tshibangu Ntumba — Université Nouveaux Horizons
+
+Compilation sur Overleaf : compilateur pdfLaTeX, fichier principal main.tex.
+
+Contenu
+  main.tex               texte de l'article
+  ICCKjournal.cls        classe du gabarit ICCK
+  references.bib         bibliographie
+  resultats_macros.tex   tous les chiffres de l'article, générés
+                         automatiquement par le notebook (ne pas éditer à la main)
+  figures/               figures produites par le notebook
+  figures/architecture.pdf  figure 1, pre-compilee (source TikZ dans
+                         figures/sources/architecture.tex)
+  orcid.pdf, doi.png, Crossmark.pdf, CC_BY.pdf, qrcode.pdf, pub-logo.pdf
+                         logos du gabarit ICCK : CADRES GRIS PROVISOIRES,
+                         à remplacer par les fichiers officiels du gabarit
+
+Le texte en bleu entre crochets signale une information à compléter
+(lien du dépôt de code).
+
+Compilation optimisee pour l'offre gratuite d'Overleaf : figures allegees,
+figure 1 pre-compilee, numeros de ligne desactives (voir la premiere ligne
+de main.tex pour les reactiver).
