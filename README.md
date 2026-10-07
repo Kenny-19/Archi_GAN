@@ -9,7 +9,7 @@ Génération de plans de logements 2D à partir d'une requête en français, par
 
 Projet de recherche de **Kenny Tshibangu Ntumba**, Université Nouveaux Horizons (Lubumbashi), dans le prolongement du mémoire de Master (2025). Version bêta.
 
-![Plans générés pour quatre requêtes](resultats/figures/fig_exemples_plans.png)
+![L'interface de la démonstration : programme, zone de dessin, propriétés](web/apercus/interface_bureau.png)
 
 ## Principe
 
@@ -25,8 +25,9 @@ Projet de recherche de **Kenny Tshibangu Ntumba**, Université Nouveaux Horizons
 |---|---|
 | `notebooks/ArchiGAN_SL_v2.ipynb` | Notebook complet : données, entraînement, évaluation, ablations, Split Learning, attaque par inversion, export des résultats |
 | `notebooks/ArchiGAN_Prompter_cGAN_original.ipynb` | Notebook d'origine (première version du prompter cGAN), conservé pour référence |
-| `docs/index.html` | Démonstration web : tout s'exécute dans le navigateur, sans serveur |
-| `web/` | Sources de la démonstration : moteur JavaScript (portage du notebook), gabarit de page, scripts d'export et d'assemblage |
+| `archigan_site/` | Démonstration web publiée sur Vercel (`index.html`, un seul fichier, sans serveur) |
+| `docs/` | Copie de la démonstration, tenue à jour par l'assemblage |
+| `web/` | Sources de la démonstration : moteur JavaScript (portage du notebook), gabarit de page, scripts d'export et d'assemblage, captures d'écran |
 | `models/cgan_final.pt` | Poids du générateur entraîné (PyTorch) |
 | `resultats/` | Résultats chiffrés de l'entraînement complet (`resultats.json`) et figures |
 | `article/` | Article (sources LaTeX, gabarit ICCK) et PDF compilé : [`ArchiGAN-SL_article.pdf`](article/ArchiGAN-SL_article.pdf) |
@@ -45,21 +46,33 @@ plan("T3 avec balcon et suite parentale", n=3)
 
 ### Démonstration web
 
-Ouvrez `docs/index.html` dans un navigateur. Pour la reconstruire après un nouvel entraînement :
+**https://archigansite.vercel.app** : tout s'exécute dans le navigateur, sans serveur ni installation. L'interface reprend celle d'un logiciel de CAO :
+
+| Zone | Rôle |
+|---|---|
+| Barre de menu | **Aide** (mode d'emploi, affiché aussi à la première visite), **Observations** (envoyer une remarque à l'auteur par e-mail), **Exporter SVG** (le plan sur fond blanc, prêt à imprimer) |
+| ① Programme, à gauche | Saisie de la requête, nombre de variantes, bouton **Dessiner**, aide-mémoire « Ce que vous pouvez écrire » et exemples cliquables |
+| Zone de dessin, au centre | Plan coté sur grille ; zoom (molette ou boutons), déplacement à la souris, bouton « Ajuster », coordonnées du curseur en mètres ; onglets **Variante A, B, C** |
+| ③ Propriétés, à droite | Surface, pièces, portes, compacité ; tableau des surfaces (pièces demandées ou ajoutées par le cGAN) ; schéma de distribution ; contrôles (accès, portes interdites, entrée) |
+| Ligne de commande, en bas | Journal des actions, par exemple `DESSINER « T3 avec balcon » → 3 variantes en 12 ms` |
+
+Sur téléphone, les panneaux s'empilent : programme, dessin, puis propriétés.
+
+Pour reconstruire la page après une modification des sources (`web/page_template.html`, `web/archigan.js`) ou un nouvel entraînement :
 
 ```bash
-python web/export_model.py models/cgan_final.pt web/model.json web/fwd_test.json
-node web/check_forward.js web/model.json web/fwd_test.json
-WEB3FORMS_KEY=... python web/build_page.py   # met à jour archigan_site/ et docs/
+python web/export_model.py models/cgan_final.pt web/model.json web/fwd_test.json   # nouveau modèle seulement
+node web/check_forward.js web/model.json web/fwd_test.json                         # nouveau modèle seulement
+WEB3FORMS_KEY=... python web/build_page.py
 ```
 
-`check_forward.js` vérifie que la passe avant JavaScript reproduit celle de PyTorch (écart maximal mesuré : 2 × 10⁻⁵).
+`check_forward.js` vérifie que la passe avant JavaScript reproduit celle de PyTorch (écart maximal mesuré : 2 × 10⁻⁵). `build_page.py` écrit `archigan_site/index.html` et `docs/index.html`, ainsi que `web/archigan-sl.html`, une variante pour claude.ai où l'export passe par la plateforme et où les observations renvoient vers le site public.
 
-Le site est déployé sur **Vercel** (https://archigansite.vercel.app) à partir de ce dépôt : `vercel.json` indique que la page se trouve dans `docs/`, sans étape de construction. Chaque envoi sur `main` redéploie le site automatiquement.
+La section « Observations » envoie les retours par e-mail via [Web3Forms](https://web3forms.com) ; la clé publique du formulaire est injectée par `WEB3FORMS_KEY`. Sans clé, le formulaire reste visible mais désactivé.
 
 ### Mettre à jour le site
 
-Le site Vercel se redéploie automatiquement à chaque envoi sur `main`. Depuis ce dossier :
+Le site Vercel est publié depuis `archigan_site/` et se redéploie automatiquement, en une dizaine de secondes, à chaque envoi sur `main`. Depuis ce dossier :
 
 ```bash
 git pull                     # récupérer les derniers changements
@@ -69,7 +82,7 @@ git commit -m "Description de la modification"
 git push
 ```
 
-La section « Observations » envoie les retours des visiteurs par e-mail via [Web3Forms](https://web3forms.com). La clé publique du formulaire est injectée à l'assemblage : `WEB3FORMS_KEY=... python web/build_page.py`. Sans clé, le formulaire reste visible mais désactivé.
+Pour vérifier qu'une mise à jour est en ligne, cherchez `version` dans le code source de la page (Cmd + U) : la date correspond à la dernière reconstruction.
 
 ## Résultats principaux
 
@@ -86,6 +99,8 @@ Entraînement complet sur 20 000 programmes (GPU Tesla T4), évaluation sur 22 r
 | Programmes reconstruits par une attaque par inversion : sans défense / avec bruit | 52,9 % / 0,4 % |
 
 Le détail figure dans `resultats/resultats.json`.
+
+![Plans générés pour quatre requêtes, dont un cas hors distribution (5 chambres)](resultats/figures/fig_exemples_plans.png)
 
 ## Article
 
