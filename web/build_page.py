@@ -24,7 +24,8 @@ root = os.path.normpath(os.path.join(d, ".."))
 out_dirs = sys.argv[1:] or [os.path.join(root, "archigan_site"), os.path.join(root, "docs")]
 version = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 artifact = os.path.join(d, "archigan-sl.html")          # version claude.ai
-open(artifact, "w", encoding="utf-8").write(t)
+assert "const ON_CLAUDE = false;" in t
+open(artifact, "w", encoding="utf-8").write(t.replace("const ON_CLAUDE = false;", "const ON_CLAUDE = true;"))
 
 cut = t.index("</style>") + len("</style>")
 head, body = t[:cut], t[cut:]

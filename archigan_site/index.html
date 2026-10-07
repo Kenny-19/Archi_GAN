@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Esquisses de logements 2D dessinées à partir d'une phrase, par un GAN conditionnel et un algorithme de placement.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f3ecc8'/%3E%3Cpath d='M5 5h22v22H5zM5 16h12V5M17 16v11' fill='none' stroke='%2326231c' stroke-width='2.5'/%3E%3C/svg%3E">
-<meta name="version" content="2026-10-07 15:55">
+<meta name="version" content="2026-10-07 15:57">
 <title>ArchiGAN-SL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -170,6 +170,7 @@ dialog.obs::backdrop { background: rgba(8,10,12,.7); }
 .obs-head button { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 4px 8px; }
 form.obs { padding: 14px; display: grid; gap: 12px; }
 form.obs > p { margin: 0; color: var(--muted); font-size: 0.86rem; }
+form.obs a { color: var(--amber); }
 .obs-types { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .obs-types legend { padding: 0; }
 .obs-types label { display: flex; gap: 6px; align-items: center; border: 1px solid var(--edge); border-radius: 3px; padding: 5px 9px; cursor: pointer; font-size: 0.86rem; }
@@ -1040,6 +1041,10 @@ const MODEL = {"latent_dim":32,"max_vec":[1.0,4.0,2.0,2.0,1.0,1.0,1.0,1.0,1.0,1.
 // Clé publique Web3Forms (https://web3forms.com) : elle identifie le formulaire ;
 // l'adresse de réception reste chez Web3Forms et n'apparaît pas dans la page.
 const WEB3FORMS_KEY = "90b5f637-238f-4b2d-9c8d-22553c974ff8";
+// Vrai seulement dans la version publiée sur claude.ai (réglé à l'assemblage) :
+// les téléchargements passent alors par la plateforme et les observations par le site Vercel.
+const ON_CLAUDE = false;
+const SITE_URL = "https://archigansite.vercel.app";
 (function () {
   const A = ArchiGAN;
   const EXAMPLES = ["T3 avec balcon", "T4 avec suite parentale et cuisine fermée", "studio de 30 m²",
@@ -1204,7 +1209,7 @@ const WEB3FORMS_KEY = "90b5f637-238f-4b2d-9c8d-22553c974ff8";
   });
 
   // ---- export SVG (fond blanc, traits noirs, pour l'impression) ----
-  $("m-export").onclick = () => {
+  $("m-export").onclick = async () => {
     if (!state) return;
     const r = state.results[current];
     const css = `.room{fill:#fff;stroke:#111}.room.balcon{fill:#eee}.wall{stroke:#111;stroke-linecap:square}.gap{fill:#fff}` +
@@ -1216,8 +1221,15 @@ const WEB3FORMS_KEY = "90b5f637-238f-4b2d-9c8d-22553c974ff8";
     const bg = `<rect x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="#fff"/>`;
     const blob = new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + raw.slice(0, cut) + "<style>" + css + "</style>" + bg + raw.slice(cut)],
                           { type: "image/svg+xml" });
-    const a = document.createElement("a");
     const name = "ArchiGAN-SL_" + state.prompt.replace(/[^\p{L}\p{N}]+/gu, "_").slice(0, 40) + "_" + LETTERS[current] + ".svg";
+    if (ON_CLAUDE) {
+      const dl = window.claude ? await window.claude.use("downloads") : null;
+      if (!dl) { log(`<span class="k">Commande :</span> EXPORTER indisponible ici. Utilisez ${SITE_URL}`); return; }
+      try { await dl.save({ filename: name, data: blob }); log(`<span class="k">Commande :</span> EXPORTER ${esc(name)}`); }
+      catch (e) { log(`<span class="k">Commande :</span> EXPORTER ${e && e.code === "declined" ? "annulé" : "impossible ici"}`); }
+      return;
+    }
+    const a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     log(`<span class="k">Commande :</span> EXPORTER ${esc(name)}`);
@@ -1250,6 +1262,13 @@ const WEB3FORMS_KEY = "90b5f637-238f-4b2d-9c8d-22553c974ff8";
   const say = (msg, cls) => { status.textContent = msg; status.className = "obs-status " + (cls || ""); };
   $("m-obs").onclick = () => { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", ""); $("obs-text").focus(); };
   $("obs-close").onclick = () => dlg.close ? dlg.close() : dlg.removeAttribute("open");
+  if (ON_CLAUDE) {
+    // claude.ai bloque les envois vers des services extérieurs : on renvoie vers le site.
+    form.innerHTML = `<p>Pour envoyer une observation à l'auteur, ouvrez la version publique du site :
+      <a href="${SITE_URL}" target="_blank" rel="noopener">${SITE_URL.replace("https://", "")}</a>,
+      puis le menu « Observations ».</p>`;
+    return;
+  }
   const configured = /^[0-9a-f-]{36}$/i.test(WEB3FORMS_KEY);
   if (!configured) { send.disabled = true; say("L'envoi n'est pas encore activé sur cette version de la page.", "err"); }
   form.addEventListener("submit", async (ev) => {
