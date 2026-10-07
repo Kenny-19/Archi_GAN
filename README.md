@@ -46,17 +46,17 @@ plan("T3 avec balcon et suite parentale", n=3)
 
 ### Démonstration web
 
-**https://archigansite.vercel.app** : tout s'exécute dans le navigateur, sans serveur ni installation. L'interface reprend celle d'un logiciel de CAO :
+**https://archigansite.vercel.app** : tout s'exécute dans le navigateur, sans serveur ni installation. L'interface est conçue d'abord pour le téléphone, puis adaptée à la tablette et à l'ordinateur :
 
-| Zone | Rôle |
+| Élément | Rôle |
 |---|---|
-| Barre de menu | **Aide** (mode d'emploi, affiché aussi à la première visite), **Observations** (envoyer une remarque à l'auteur par e-mail), **Exporter SVG** (le plan sur fond blanc, prêt à imprimer) |
-| ① Programme, à gauche | Saisie de la requête, nombre de variantes, bouton **Dessiner**, aide-mémoire « Ce que vous pouvez écrire » et exemples cliquables |
-| Zone de dessin, au centre | Plan coté sur grille ; zoom (molette ou boutons), déplacement à la souris, bouton « Ajuster », coordonnées du curseur en mètres ; onglets **Variante A, B, C** |
-| ③ Propriétés, à droite | Surface, pièces, portes, compacité ; tableau des surfaces (pièces demandées ou ajoutées par le cGAN) ; schéma de distribution ; contrôles (accès, portes interdites, entrée) |
-| Ligne de commande, en bas | Journal des actions, par exemple `DESSINER « T3 avec balcon » → 3 variantes en 12 ms` |
+| Plan, au centre | Plan coté en grand ; zoom à deux doigts, à la molette ou avec les boutons, déplacement au doigt ou à la souris, double-tap ou double-clic pour recadrer |
+| Saisie, en bas | Champ fixé en bas de l'écran (comme une messagerie), avec des exemples à toucher juste au-dessus |
+| Barre sous le plan | Variantes **A, B, C**, surface et nombre de pièces, bouton **Autres** pour de nouvelles propositions |
+| Détails | Onglets **Surfaces**, **Organisation** (schéma de distribution) et **Vérifications** : volet qui glisse depuis le bas sur téléphone et tablette, panneau latéral sur ordinateur |
+| En haut | **Exporter** (plan en SVG, fond blanc, prêt à imprimer), **Avis** (remarque envoyée à l'auteur par e-mail), **Aide** (mode d'emploi, affiché aussi à la première visite) |
 
-Sur téléphone, les panneaux s'empilent : programme, dessin, puis propriétés.
+La page suit le thème clair ou sombre de l'appareil.
 
 Pour reconstruire la page après une modification des sources (`web/page_template.html`, `web/archigan.js`) ou un nouvel entraînement :
 

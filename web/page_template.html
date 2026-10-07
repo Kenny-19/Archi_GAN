@@ -1,317 +1,328 @@
 <title>ArchiGAN-SL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
 <style>
-/* Mise en page : interface de logiciel de CAO. Barre de menu, panneau Programme à gauche,
-   zone de dessin sur grille au centre, panneau Propriétés à droite, ligne de commande en bas.
-   Thème sombre d'atelier, volontairement unique (les logiciels de CAO sont sombres). */
+/* Mise en page : application conçue d'abord pour le téléphone. Le plan occupe l'écran,
+   la saisie est fixée en bas (comme une messagerie), les détails sont dans des onglets
+   (volet glissant sur téléphone, panneau latéral à partir de 1024 px). */
 :root {
-  color-scheme: dark;
-  --app: #15181c;          /* fond de l'application */
-  --panel: #1c2026;        /* panneaux */
-  --panel-2: #232830;      /* en-têtes de panneaux, champs */
-  --edge: #2e343d;         /* séparations */
-  --canvas: #101316;       /* zone de dessin */
-  --grid: #222831;         /* points de la grille */
-  --text: #d9dee4;
-  --muted: #8b95a1;
-  --amber: #f0a73a;        /* outil actif, sélection */
-  --cyan: #56d0e6;         /* cotes, mesures */
-  --ok: #6fcf8a;
-  --bad: #f07067;
-  --line: #e9eef3;         /* traits du plan */
-  --room: #171b20;
-  --balcony: #1d2a33;
-  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --bg: #f3f4f1;
+  --surface: #ffffff;
+  --ink: #17191c;
+  --muted: #646b72;
+  --line: #e2e5e1;
+  --accent: #1d6b4f;        /* vert de plan d'urbanisme */
+  --accent-ink: #ffffff;
+  --accent-soft: #e4efe9;
+  --warn: #b2412e;
+  --plan-bg: #ffffff;
+  --room: #ffffff;
+  --balcony: #eef2ee;
+  --wall: #17191c;
+  --dim: #2f7f9a;
+  --shadow: 0 1px 2px rgba(20, 24, 22, .06), 0 6px 20px rgba(20, 24, 22, .06);
+  --font: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
-* { box-sizing: border-box; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121514; --surface: #1b1f1d; --ink: #e9ecea; --muted: #9aa39e; --line: #2c322f;
+    --accent: #5cc79a; --accent-ink: #0d1a14; --accent-soft: #1f3329; --warn: #f08a76;
+    --plan-bg: #161a18; --room: #1b1f1d; --balcony: #22302a; --wall: #e9ecea; --dim: #6cc3de;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121514; --surface: #1b1f1d; --ink: #e9ecea; --muted: #9aa39e; --line: #2c322f;
+  --accent: #5cc79a; --accent-ink: #0d1a14; --accent-soft: #1f3329; --warn: #f08a76;
+  --plan-bg: #161a18; --room: #1b1f1d; --balcony: #22302a; --wall: #e9ecea; --dim: #6cc3de;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25); color-scheme: dark;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; }
-body { margin: 0; background: var(--app); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.45; }
-button, input, select, textarea { font: inherit; color: inherit; }
-:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.45;
+       overscroll-behavior: none; }
+button, input, textarea, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2.5px solid var(--accent); outline-offset: 2px; }
 
-.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+/* ----- coquille de l'application (hauteur de l'écran) ----- */
+.app { height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; max-width: 1600px; margin: 0 auto; }
 
-/* barre de menu */
-.menubar { display: flex; align-items: stretch; gap: 0; background: var(--panel); border-bottom: 1px solid var(--edge); min-height: 40px; padding-inline: 0 10px; }
-.brand { display: flex; align-items: center; gap: 9px; padding: 0 14px; border-right: 1px solid var(--edge); font-weight: 700; letter-spacing: 0.02em; }
-.brand svg { width: 20px; height: 20px; flex: none; }
-.brand small { font-family: var(--mono); font-weight: 500; font-size: 0.7rem; color: var(--amber); border: 1px solid currentColor; padding: 0 4px; border-radius: 2px; }
-.menu { display: flex; }
-.menu button { background: none; border: 0; border-right: 1px solid var(--edge); padding: 0 14px; cursor: pointer; color: var(--text); display: flex; align-items: center; gap: 7px; }
-.menu button:hover { background: var(--panel-2); }
-.menu button svg { width: 15px; height: 15px; color: var(--muted); }
-.menubar .info { margin-left: auto; display: flex; align-items: center; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+.top { display: flex; align-items: center; gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 8px; }
+.logo { display: flex; align-items: center; gap: 10px; min-width: 0; margin-right: auto; }
+.logo svg { width: 30px; height: 30px; flex: none; }
+.logo b { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; }
+.logo span { display: block; font-size: 0.78rem; color: var(--muted); line-height: 1.2; }
+.icon-btn { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface);
+            display: grid; place-items: center; cursor: pointer; flex: none; }
+.icon-btn svg { width: 20px; height: 20px; }
+.icon-btn:hover { border-color: var(--muted); }
+.top .label { display: none; }
 
-/* espace de travail */
-.workspace { display: grid; grid-template-columns: 300px minmax(0, 1fr) 330px; min-height: 0; }
-.panel { background: var(--panel); min-height: 0; overflow: auto; display: flex; flex-direction: column; }
-.panel.left { border-right: 1px solid var(--edge); }
-.panel.right { border-left: 1px solid var(--edge); }
-.ph { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; background: var(--panel-2); border-bottom: 1px solid var(--edge);
-      padding: 7px 12px; font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-.ph .step { font-family: var(--mono); color: #111; background: var(--amber); border-radius: 2px; padding: 0 5px; font-size: 0.72rem; letter-spacing: 0; }
-.pb { padding: 12px; display: grid; gap: 12px; border-bottom: 1px solid var(--edge); }
-.lbl { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; display: block; }
-textarea, input[type=text], input[type=email], select {
-  width: 100%; background: var(--canvas); border: 1px solid var(--edge); border-radius: 3px; padding: 7px 9px; font-size: max(0.95rem, 16px); }
-#prompt { min-height: 84px; resize: vertical; font-family: var(--mono); font-size: max(0.92rem, 16px); line-height: 1.4; }
-.run { display: grid; grid-template-columns: 86px minmax(0, 1fr); gap: 8px; align-items: end; }
-.btn { border: 0; border-radius: 3px; padding: 9px 12px; cursor: pointer; font-weight: 600; background: var(--panel-2); color: var(--text); border: 1px solid var(--edge); min-height: 38px; }
-.btn:hover { border-color: var(--muted); }
-.btn.primary { background: var(--amber); border-color: var(--amber); color: #15120b; display: flex; align-items: center; justify-content: center; gap: 8px; }
-.btn.primary:hover { filter: brightness(1.08); }
-.btn:disabled { opacity: .5; cursor: default; }
-kbd { font-family: var(--mono); font-size: 0.68rem; border: 1px solid rgba(0,0,0,.35); border-radius: 2px; padding: 0 3px; }
-.examples { list-style: none; margin: 0; padding: 0; display: grid; }
-.examples button { width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--edge); padding: 7px 2px; cursor: pointer; display: flex; gap: 8px; font-family: var(--mono); font-size: 0.8rem; color: var(--text); }
-.examples button span { color: var(--muted); }
-.examples button:hover { color: var(--amber); }
-details.syntax summary { cursor: pointer; font-size: 0.8rem; color: var(--muted); }
-details.syntax ul { margin: 8px 0 0; padding-left: 16px; font-size: 0.8rem; color: var(--muted); display: grid; gap: 3px; }
-details.syntax code { font-family: var(--mono); color: var(--text); }
-
-/* zone de dessin */
-.viewport { position: relative; min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; background: var(--canvas); }
-.canvas { position: relative; overflow: hidden; min-height: 0;
-  background-image: radial-gradient(var(--grid) 1px, transparent 1px); background-size: 20px 20px; cursor: crosshair; touch-action: pan-y; }
+/* ----- zone principale ----- */
+.main { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); padding: 0 12px; gap: 12px; }
+.stage { min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); overflow: hidden; }
+.canvas { position: relative; min-height: 0; background: var(--plan-bg); touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 .canvas.dragging { cursor: grabbing; }
 .canvas svg.plan-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.tools { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--edge); border-radius: 3px; z-index: 2; }
-.tools button { width: 34px; height: 34px; background: none; border: 0; border-bottom: 1px solid var(--edge); cursor: pointer; color: var(--text); display: grid; place-items: center; }
-.tools button:last-child { border-bottom: 0; }
-.tools button:hover { color: var(--amber); }
-.tools svg { width: 16px; height: 16px; }
-.coords { position: absolute; left: 10px; bottom: 8px; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); background: rgba(16,19,22,.8); padding: 2px 6px; border-radius: 2px; pointer-events: none; z-index: 2; }
-.req { position: absolute; top: 10px; right: 10px; left: 58px; text-align: right; font-family: var(--mono); font-size: 0.76rem; color: var(--muted); pointer-events: none; z-index: 2; overflow-wrap: anywhere; }
-.req b { color: var(--text); font-weight: 500; }
-.layouts { display: flex; background: var(--panel); border-top: 1px solid var(--edge); overflow-x: auto; }
-.layouts button { background: none; border: 0; border-right: 1px solid var(--edge); padding: 7px 14px; cursor: pointer; color: var(--muted); font-family: var(--mono); font-size: 0.78rem; white-space: nowrap; min-height: 34px; }
-.layouts button[aria-selected="true"] { color: var(--text); background: var(--canvas); box-shadow: inset 0 2px 0 var(--amber); }
-
-/* plan */
-.plan-svg .room { fill: var(--room); stroke: var(--line); stroke-opacity: .55; }
+/* dessin du plan */
+.plan-svg .room { fill: var(--room); stroke: var(--wall); stroke-opacity: .5; }
 .plan-svg .room.balcon { fill: var(--balcony); }
-.plan-svg .wall { stroke: var(--line); stroke-linecap: square; }
+.plan-svg .wall { stroke: var(--wall); stroke-linecap: square; }
 .plan-svg .gap { fill: var(--room); }
-.plan-svg .leaf, .plan-svg .swing { stroke: var(--line); fill: none; stroke-opacity: .85; }
-.plan-svg .entry { stroke: var(--amber); stroke-opacity: 1; }
-.plan-svg .entry-label { fill: var(--amber); font-family: var(--mono); }
-.plan-svg .label { fill: var(--text); font-family: var(--mono); font-weight: 500; letter-spacing: 0.04em; }
-.plan-svg .area { fill: var(--muted); font-family: var(--mono); }
-.plan-svg .dim { stroke: var(--cyan); fill: none; }
-.plan-svg .dim-text { fill: var(--cyan); font-family: var(--mono); }
-.plan-svg .scale-a { fill: var(--line); stroke: var(--line); }
-.plan-svg .scale-b { fill: var(--canvas); stroke: var(--line); }
+.plan-svg .leaf, .plan-svg .swing { stroke: var(--wall); fill: none; stroke-opacity: .8; }
+.plan-svg .entry { stroke: var(--accent); stroke-opacity: 1; }
+.plan-svg .entry-label { fill: var(--accent); font-family: var(--font); font-weight: 700; }
+.plan-svg .label { fill: var(--ink); font-family: var(--font); font-weight: 700; letter-spacing: 0.02em; }
+.plan-svg .area { fill: var(--muted); font-family: var(--font); font-weight: 500; }
+.plan-svg .dim { stroke: var(--dim); fill: none; }
+.plan-svg .dim-text { fill: var(--dim); font-family: var(--font); font-weight: 600; }
+.plan-svg .scale-a { fill: var(--wall); stroke: var(--wall); }
+.plan-svg .scale-b { fill: var(--plan-bg); stroke: var(--wall); }
 
-/* aide (mode d'emploi) */
-.help { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(10,12,14,.72); z-index: 5; padding: 16px; }
-.help[hidden] { display: none; }
-.help-card { width: min(560px, 100%); background: var(--panel); border: 1px solid var(--edge); border-top: 2px solid var(--amber); border-radius: 4px; padding: 18px 20px; display: grid; gap: 14px; }
-.help-card h2 { margin: 0; font-size: 1.15rem; }
-.help-card ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
-.help-card li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 10px; }
-.help-card li > span { font-family: var(--mono); color: #111; background: var(--amber); border-radius: 2px; text-align: center; height: 22px; font-weight: 600; }
-.help-card li p { margin: 2px 0 0; color: var(--muted); }
-.help-card li strong { color: var(--text); }
-.help-card code { font-family: var(--mono); color: var(--amber); font-size: 0.86em; }
-.help-card .btn { justify-self: start; }
+.zoom { position: absolute; right: 10px; top: 10px; display: grid; gap: 6px; z-index: 2; }
+.zoom button { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: grid; place-items: center; box-shadow: var(--shadow); }
+.zoom svg { width: 18px; height: 18px; }
+.hint { position: absolute; left: 12px; bottom: 10px; font-size: 0.78rem; color: var(--muted); pointer-events: none; z-index: 2; }
 
-/* propriétés */
-.props { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--edge); border: 1px solid var(--edge); }
-.props div { background: var(--panel); padding: 7px 9px; }
-.props dt { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 0; }
-.props dd { margin: 0; font-family: var(--mono); font-size: 1rem; font-variant-numeric: tabular-nums; }
+.bar { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.seg { display: flex; background: var(--bg); border-radius: 12px; padding: 3px; }
+.seg button { min-width: 44px; height: 38px; border: 0; background: none; border-radius: 9px; font-weight: 700; cursor: pointer; color: var(--muted); padding: 0 12px; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.summary { font-size: 0.95rem; color: var(--muted); font-variant-numeric: tabular-nums; margin-right: auto; }
+.summary b { color: var(--ink); font-weight: 700; }
+.chip-btn { height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); padding: 0 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.chip-btn svg { width: 17px; height: 17px; }
+.chip-btn.primary { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+
+/* ----- détails (volet sur téléphone, panneau latéral sur grand écran) ----- */
+.details { background: var(--surface); display: flex; flex-direction: column; min-height: 0; }
+.details-head { display: flex; align-items: center; gap: 10px; padding: 8px 16px 0; }
+.grabber { width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 8px auto 2px; }
+.details-head h2 { margin: 0; font-size: 1.05rem; margin-right: auto; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 12px 16px 4px; }
+.stat { background: var(--bg); border-radius: 12px; padding: 9px 11px; }
+.stat span { display: block; font-size: 0.75rem; color: var(--muted); }
+.stat b { font-size: 1.12rem; font-variant-numeric: tabular-nums; }
+.tabs { display: flex; gap: 4px; padding: 10px 16px 0; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; background: none; padding: 10px 10px 11px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1px; min-height: 44px; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tab-body { overflow: auto; padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 16px); min-height: 0; flex: 1; }
+.tab-body[hidden] { display: none; }
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-th { text-align: left; font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; padding: 0 0 5px; }
-td { padding: 4px 0; border-top: 1px solid var(--edge); font-size: 0.86rem; }
-td.num, th.num { text-align: right; font-family: var(--mono); white-space: nowrap; }
-.src { text-align: right; }
-.chip { font-family: var(--mono); font-size: 0.66rem; padding: 0 5px; border-radius: 2px; border: 1px solid currentColor; white-space: nowrap; }
-.chip.given { color: var(--muted); }
-.chip.model { color: var(--amber); }
-tfoot td { border-top: 1px solid var(--muted); font-weight: 600; }
-.scheme svg { width: 100%; height: auto; display: block; max-height: 260px; }
-.scheme .edge { stroke: var(--muted); stroke-width: 1.2; fill: none; }
-.scheme .edge.missing { stroke: var(--bad); stroke-dasharray: 3 3; }
-.scheme .node { fill: var(--panel-2); stroke: var(--line); stroke-opacity: .6; stroke-width: 1.1; }
-.scheme .node.circ { fill: #2c2a22; stroke: var(--amber); stroke-opacity: 1; }
-.scheme .node-t { fill: var(--text); font-family: var(--mono); font-size: 9.5px; }
-.scheme .entry-dot { fill: var(--amber); }
-ul.topo, ul.checks { list-style: none; margin: 0; padding: 0; display: grid; }
-ul.topo li, ul.checks li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 5px 0; border-top: 1px solid var(--edge); font-size: 0.85rem; }
-ul.checks b { font-family: var(--mono); font-weight: 500; font-variant-numeric: tabular-nums; }
-.state { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 0.76rem; }
-.state::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.state.ok { color: var(--ok); } .state.ko { color: var(--bad); }
-.note { font-size: 0.76rem; color: var(--muted); margin: 0; }
+td { padding: 10px 0; border-bottom: 1px solid var(--line); }
+td.num { text-align: right; white-space: nowrap; font-weight: 600; }
+td.src { text-align: right; width: 1%; padding-left: 10px; }
+.tag { font-size: 0.74rem; font-weight: 600; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.tag.given { background: var(--bg); color: var(--muted); }
+.tag.model { background: var(--accent-soft); color: var(--accent); }
+tfoot td { border-bottom: 0; font-weight: 700; }
+.legend { font-size: 0.82rem; color: var(--muted); margin: 10px 0 0; }
+.scheme svg { width: 100%; height: auto; display: block; max-height: 280px; }
+.scheme .edge { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+.scheme .edge.missing { stroke: var(--warn); stroke-dasharray: 4 3; }
+.scheme .node { fill: var(--surface); stroke: var(--ink); stroke-width: 1.3; }
+.scheme .node.circ { fill: var(--accent-soft); stroke: var(--accent); }
+.scheme .node-t { fill: var(--ink); font-family: var(--font); font-size: 10px; font-weight: 700; }
+.scheme .entry-dot { fill: var(--accent); }
+ul.list { list-style: none; margin: 0; padding: 0; }
+ul.list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.ok, .ko { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.92rem; white-space: nowrap; }
+.ok { color: var(--accent); } .ko { color: var(--warn); }
+.ok::before { content: "✓"; } .ko::before { content: "!"; }
+.about { font-size: 0.82rem; color: var(--muted); margin: 16px 0 0; }
 
-/* ligne de commande */
-.cmdline { background: var(--panel); border-top: 1px solid var(--edge); font-family: var(--mono); font-size: 0.74rem; padding: 5px 12px; display: grid; gap: 1px; max-height: 76px; overflow: auto; }
-.cmdline div { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cmdline div:last-child { color: var(--text); }
-.cmdline .k { color: var(--amber); }
+/* ----- saisie fixée en bas ----- */
+.composer { padding: 10px 12px calc(env(safe-area-inset-bottom, 0px) + 10px); display: grid; gap: 8px; }
+.examples { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 0; margin: 0; list-style: none; }
+.examples::-webkit-scrollbar { display: none; }
+.examples button { white-space: nowrap; height: 36px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); padding: 0 14px; cursor: pointer; font-size: 0.92rem; }
+.examples button:hover { border-color: var(--accent); color: var(--accent); }
+form.ask { display: flex; align-items: flex-end; gap: 8px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 22px; padding: 6px 6px 6px 16px; box-shadow: var(--shadow); }
+form.ask:focus-within { border-color: var(--accent); }
+#prompt { flex: 1; min-width: 0; border: 0; background: none; resize: none; padding: 9px 0; font-size: 16px; line-height: 1.35; max-height: 7.5em; outline: none; }
+.send { width: 46px; height: 46px; border-radius: 16px; border: 0; background: var(--accent); color: var(--accent-ink); cursor: pointer; display: grid; place-items: center; flex: none; }
+.send svg { width: 22px; height: 22px; }
+.tip { font-size: 0.8rem; color: var(--muted); margin: 0 4px; }
+
+/* volet glissant (téléphone et tablette) */
+.scrim { position: fixed; inset: 0; background: rgba(10, 12, 11, .38); z-index: 20; }
+.scrim[hidden] { display: none; }
+@media (max-width: 1023px) {
+  .details { position: fixed; left: 0; right: 0; bottom: 0; max-height: 82dvh; border-radius: 22px 22px 0 0; z-index: 21;
+             box-shadow: 0 -10px 40px rgba(0,0,0,.18); transform: translateY(105%); visibility: hidden;
+             transition: transform .25s ease, visibility 0s linear .25s; }
+  .details.open { transform: none; visibility: visible; transition: transform .25s ease; }
+}
+@media (max-width: 1023px) and (min-width: 700px) { .details { left: 50%; right: auto; width: 640px; margin-left: -320px; } }
+@media (prefers-reduced-motion: reduce) { .details, .details.open { transition: none; } }
+
+/* aide */
+.coach { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px; background: rgba(10,12,11,.45); }
+.coach[hidden] { display: none; }
+.coach-card { width: min(440px, 100%); background: var(--surface); border-radius: 20px; padding: 20px; box-shadow: var(--shadow); display: grid; gap: 14px; max-height: 100%; overflow: auto; }
+.coach-card h2 { margin: 0; font-size: 1.2rem; }
+.coach-card ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; }
+.coach-card li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; }
+.coach-card li > span { width: 32px; height: 32px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-weight: 800; display: grid; place-items: center; }
+.coach-card p { margin: 2px 0 0; color: var(--muted); font-size: 0.94rem; }
+.coach-card em { font-style: normal; font-weight: 600; color: var(--ink); }
+.btn { height: 48px; border-radius: 14px; border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 700; padding: 0 20px; cursor: pointer; }
+.btn:disabled { opacity: .55; cursor: default; }
 
 /* observations */
-dialog.obs { width: min(560px, calc(100% - 24px)); background: var(--panel); color: var(--text); border: 1px solid var(--edge); border-top: 2px solid var(--amber); border-radius: 4px; padding: 0; }
-dialog.obs::backdrop { background: rgba(8,10,12,.7); }
-.obs-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--panel-2); border-bottom: 1px solid var(--edge); }
-.obs-head h2 { margin: 0; font-size: 1rem; }
-.obs-head button { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 4px 8px; }
-form.obs { padding: 14px; display: grid; gap: 12px; }
-form.obs > p { margin: 0; color: var(--muted); font-size: 0.86rem; }
-form.obs a { color: var(--amber); }
-.obs-types { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+dialog.obs { width: min(520px, 100%); max-height: 92dvh; border: 0; border-radius: 22px; padding: 0; background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+dialog.obs::backdrop { background: rgba(10,12,11,.45); }
+.obs-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 4px 20px; }
+.obs-head h2 { margin: 0; font-size: 1.15rem; }
+form.obs { padding: 8px 20px 20px; display: grid; gap: 14px; }
+form.obs > p { margin: 0; color: var(--muted); font-size: 0.94rem; }
+form.obs a { color: var(--accent); font-weight: 600; }
+.lbl { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
+.obs-types { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .obs-types legend { padding: 0; }
-.obs-types label { display: flex; gap: 6px; align-items: center; border: 1px solid var(--edge); border-radius: 3px; padding: 5px 9px; cursor: pointer; font-size: 0.86rem; }
-.obs-types label:has(input:checked) { border-color: var(--amber); color: var(--amber); }
-.obs-types input { accent-color: var(--amber); }
-#obs-text { min-height: 96px; resize: vertical; }
+.obs-types label { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); cursor: pointer; font-size: 0.94rem; }
+.obs-types label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.obs-types input { position: absolute; opacity: 0; pointer-events: none; }
+.field { width: 100%; border: 1.5px solid var(--line); border-radius: 12px; background: var(--bg); padding: 11px 13px; font-size: 16px; }
+.field:focus { border-color: var(--accent); outline: none; }
+#obs-text { min-height: 110px; resize: vertical; }
 .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
-.attach { display: flex; gap: 8px; align-items: flex-start; font-size: 0.85rem; color: var(--muted); }
-.attach input { accent-color: var(--amber); margin-top: 3px; }
+.attach { display: flex; gap: 10px; align-items: flex-start; font-size: 0.92rem; color: var(--muted); }
+.attach input { width: 20px; height: 20px; accent-color: var(--accent); margin: 1px 0 0; flex: none; }
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
-.obs-foot { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.obs-status { margin: 0; font-size: 0.86rem; }
-.obs-status.err { color: var(--bad); } .obs-status.sent { color: var(--ok); }
+.obs-status { margin: 0; font-size: 0.92rem; }
+.obs-status.err { color: var(--warn); } .obs-status.sent { color: var(--accent); font-weight: 600; }
 
-/* ---- tablette ---- */
-@media (max-width: 1180px) { .workspace { grid-template-columns: 270px minmax(0, 1fr) 290px; } }
-/* ---- écran étroit et téléphone : les panneaux s'empilent ---- */
-@media (max-width: 900px) {
-  html, body { height: auto; }
-  .app { height: auto; display: block; }
-  .menubar { flex-wrap: wrap; padding: 0; }
-  .brand { border-right: 0; padding: 9px 12px; width: 100%; border-bottom: 1px solid var(--edge); }
-  .menu { width: 100%; }
-  .menu button { flex: 1 1 0; justify-content: center; padding: 9px 6px; font-size: 0.82rem; min-height: 40px; }
-  .menu button:last-child { border-right: 0; }
-  .menubar .info { display: none; }
-  .workspace { display: block; }
-  .panel { overflow: visible; }
-  .panel.left, .panel.right { border: 0; border-bottom: 1px solid var(--edge); }
-  .viewport { border-bottom: 1px solid var(--edge); }
-  .canvas { height: min(72vh, 520px); }
-  .req { left: 54px; font-size: 0.7rem; }
-  .cmdline { max-height: none; }
+/* ----- tablette en paysage et ordinateur : panneau latéral ----- */
+@media (min-width: 1024px) {
+  .top { padding: 16px 24px 12px; }
+  .top .label { display: inline; font-weight: 600; font-size: 0.92rem; }
+  .icon-btn.wide { width: auto; padding: 0 14px; gap: 8px; display: inline-flex; align-items: center; }
+  .main { grid-template-columns: minmax(0, 1fr) 380px; padding: 0 24px; gap: 20px; }
+  .details { border-radius: 20px; box-shadow: var(--shadow); overflow: hidden; }
+  .details .grabber, #details-close, #open-details { display: none; }
+  .details-head { padding-top: 16px; }
+  .composer { padding: 14px 24px 20px; max-width: calc(100% - 400px); }
+  .canvas { cursor: grab; }
+}
+/* ----- téléphone : on resserre ----- */
+@media (max-width: 520px) {
+  .logo span { display: none; }
+  .main { padding: 0 8px; }
+  .stage { border-radius: 16px; }
+  .bar { padding: 8px 10px; gap: 8px; }
+  .summary { order: 3; width: 100%; font-size: 0.9rem; }
+  .composer { padding-left: 8px; padding-right: 8px; }
   .two { grid-template-columns: minmax(0, 1fr); }
-  .btn.primary kbd { display: none; }
+  dialog.obs { margin: auto 0 0; width: 100%; max-width: 100%; border-radius: 22px 22px 0 0; }
 }
 </style>
 
 <div class="app">
-  <header class="menubar">
-    <div class="brand">
-      <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2" y="2" width="16" height="16" fill="none" stroke="#f0a73a" stroke-width="2"/><path d="M2 10h9V2M11 10v8" fill="none" stroke="#d9dee4" stroke-width="2"/></svg>
-      ArchiGAN-SL <small>BÊTA</small>
+  <header class="top">
+    <div class="logo">
+      <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="1" width="28" height="28" rx="8" fill="var(--accent)"/><path d="M8 8h14v14H8zM8 15h8V8M16 15v7" fill="none" stroke="var(--accent-ink)" stroke-width="2.2" stroke-linejoin="round"/></svg>
+      <div><b>ArchiGAN-SL</b><span>Un plan de logement à partir d'une phrase</span></div>
     </div>
-    <nav class="menu" aria-label="Menu">
-      <button type="button" id="m-help"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.6.3-.8.6-.8 1.3M8 11.4v.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Aide</button>
-      <button type="button" id="m-obs"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h12v8H6l-3 3v-3H2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>Observations</button>
-      <button type="button" id="m-export"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8M4.5 6.5 8 10l3.5-3.5M3 13h10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Exporter SVG</button>
-    </nav>
-    <div class="info" id="info"></div>
+    <button class="icon-btn wide" type="button" id="m-export" aria-label="Exporter le plan (SVG)" title="Exporter le plan (SVG)">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9M6 8.5 10 12.5l4-4M4 16h12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="label">Exporter</span></button>
+    <button class="icon-btn wide" type="button" id="m-obs" aria-label="Envoyer une observation" title="Envoyer une observation">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4.5h14v9H8l-4 3.5v-3.5H3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="label">Avis</span></button>
+    <button class="icon-btn wide" type="button" id="m-help" aria-label="Aide" title="Aide">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7.8 7.8a2.3 2.3 0 1 1 3.2 2.1c-.7.3-1 .7-1 1.5M10 14v.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="label">Aide</span></button>
   </header>
 
-  <main class="workspace">
-    <aside class="panel left" aria-label="Programme">
-      <div class="ph"><span class="step">1</span>Programme</div>
-      <form class="pb" id="form" autocomplete="off">
-        <div>
-          <label class="lbl" for="prompt">Décrivez le logement</label>
-          <textarea id="prompt" name="prompt" spellcheck="false">T3 avec balcon et suite parentale</textarea>
-        </div>
-        <div class="run">
-          <div>
-            <label class="lbl" for="n">Variantes</label>
-            <select id="n"><option value="1">1</option><option value="3" selected>3</option><option value="6">6</option></select>
-          </div>
-          <button class="btn primary" type="submit">Dessiner <kbd>⌘↵</kbd></button>
-        </div>
-        <details class="syntax">
-          <summary>Ce que vous pouvez écrire</summary>
-          <ul>
-            <li>une typologie : <code>studio</code>, <code>T2</code> … <code>T6</code></li>
-            <li>des pièces : <code>3 chambres</code>, <code>2 salles de bain</code>, <code>un bureau</code></li>
-            <li>une absence : <code>sans balcon</code></li>
-            <li>une surface : <code>de 65 m²</code>, <code>plan 9x11 m</code></li>
-            <li>une disposition : <code>suite parentale</code>, <code>cuisine fermée</code>, <code>WC séparés</code>, <code>chambre avec dressing</code>, <code>coin bureau</code></li>
-          </ul>
-        </details>
-      </form>
-      <div class="ph">Exemples</div>
-      <div class="pb"><ul class="examples" id="examples"></ul></div>
-    </aside>
-
-    <section class="viewport" aria-label="Zone de dessin">
+  <main class="main">
+    <section class="stage" aria-label="Plan">
       <div class="canvas" id="canvas">
-        <div class="tools" role="toolbar" aria-label="Affichage">
-          <button type="button" id="z-in" title="Zoom avant" aria-label="Zoom avant"><svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6"/></svg></button>
-          <button type="button" id="z-out" title="Zoom arrière" aria-label="Zoom arrière"><svg viewBox="0 0 16 16"><path d="M3 8h10" stroke="currentColor" stroke-width="1.6"/></svg></button>
-          <button type="button" id="z-fit" title="Ajuster à la fenêtre" aria-label="Ajuster à la fenêtre"><svg viewBox="0 0 16 16"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
-        </div>
-        <div class="req" id="q"></div>
         <div id="plan"></div>
-        <div class="coords" id="coords">X — Y —</div>
-        <div class="help" id="help" hidden>
-          <div class="help-card" role="dialog" aria-labelledby="help-title">
-            <h2 id="help-title">Bienvenue dans ArchiGAN-SL</h2>
+        <div class="zoom" role="toolbar" aria-label="Zoom">
+          <button type="button" id="z-in" aria-label="Zoom avant"><svg viewBox="0 0 18 18"><path d="M9 4v10M4 9h10" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>
+          <button type="button" id="z-out" aria-label="Zoom arrière"><svg viewBox="0 0 18 18"><path d="M4 9h10" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>
+          <button type="button" id="z-fit" aria-label="Recadrer le plan"><svg viewBox="0 0 18 18"><path d="M3 7V3h4M11 3h4v4M15 11v4h-4M7 15H3v-4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+        <p class="hint" id="hint">Pincez pour zoomer · glissez pour déplacer</p>
+        <div class="coach" id="help" hidden>
+          <div class="coach-card" role="dialog" aria-labelledby="help-title">
+            <h2 id="help-title">Comment ça marche</h2>
             <ol>
-              <li><span>1</span><div><strong>Décrivez le logement</strong><p>Dans le panneau « Programme », à gauche, écrivez en français ce que vous voulez, par exemple <code>T3 avec balcon</code> ou <code>2 chambres, cuisine fermée, 70 m²</code>. Vous pouvez aussi cliquer sur un exemple.</p></div></li>
-              <li><span>2</span><div><strong>Cliquez sur « Dessiner »</strong><p>Le plan apparaît au centre. Chaque clic propose de nouvelles variantes : passez de l'une à l'autre avec les onglets sous le dessin. Zoomez avec la molette ou les boutons, déplacez le plan en le faisant glisser.</p></div></li>
-              <li><span>3</span><div><strong>Lisez le résultat et donnez votre avis</strong><p>Le panneau « Propriétés » détaille les surfaces, l'organisation des pièces et les contrôles. Le menu « Observations » vous permet d'envoyer une remarque à l'auteur.</p></div></li>
+              <li><span>1</span><div><strong>Décrivez le logement</strong><p>Dans le champ en bas, écrivez par exemple <em>T3 avec balcon</em> ou <em>2 chambres, cuisine fermée, 70 m²</em>. Vous pouvez aussi toucher un exemple.</p></div></li>
+              <li><span>2</span><div><strong>Envoyez</strong><p>Touchez la flèche : trois plans sont dessinés. Passez de l'un à l'autre avec A, B, C. Zoomez avec deux doigts.</p></div></li>
+              <li><span>3</span><div><strong>Regardez les détails et donnez votre avis</strong><p>« Détails » montre la surface de chaque pièce et les vérifications. « Avis », en haut, envoie une remarque à l'auteur.</p></div></li>
             </ol>
-            <button type="button" class="btn primary" id="help-ok">C'est parti</button>
+            <button type="button" class="btn" id="help-ok">J'ai compris</button>
           </div>
         </div>
       </div>
-      <div class="layouts" id="variants" role="tablist" aria-label="Variantes"></div>
+      <div class="bar">
+        <div class="seg" id="variants" role="group" aria-label="Variantes"></div>
+        <span class="summary" id="summary"></span>
+        <button type="button" class="chip-btn" id="again" title="Proposer d'autres plans pour la même description">
+          <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M14.5 6.5A6 6 0 1 0 15 11M15 3v3.5h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Autres</button>
+        <button type="button" class="chip-btn primary" id="open-details">Détails</button>
+      </div>
     </section>
 
-    <aside class="panel right" aria-label="Propriétés">
-      <div class="ph"><span class="step">3</span>Propriétés</div>
-      <div class="pb"><dl class="props" id="props"></dl></div>
-      <div class="ph">Surfaces</div>
-      <div class="pb">
-        <table>
-          <thead><tr><th>Pièce</th><th class="num">Surface</th><th class="src">Source</th></tr></thead>
-          <tbody id="prog"></tbody>
-          <tfoot><tr><td>Total</td><td class="num" id="prog-total"></td><td></td></tr></tfoot>
-        </table>
-        <p class="note"><span class="chip given">requête</span> écrit dans le programme · <span class="chip model">cGAN</span> ajouté par le modèle</p>
+    <aside class="details" id="details" aria-label="Détails du plan">
+      <div class="grabber" aria-hidden="true"></div>
+      <div class="details-head">
+        <h2 id="details-title">Détails du plan</h2>
+        <button type="button" class="icon-btn" id="details-close" aria-label="Fermer les détails"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>
       </div>
-      <div class="ph">Distribution</div>
-      <div class="pb scheme"><div id="scheme"></div><ul class="topo" id="topo"></ul>
-        <p class="note">Trait plein : porte réalisée · tirets rouges : liaison non réalisée · point ambre : entrée</p></div>
-      <div class="ph">Contrôles</div>
-      <div class="pb"><ul class="checks" id="checks"></ul></div>
-      <div class="pb"><p class="note">Prototype de recherche · Kenny Tshibangu Ntumba, Université Nouveaux Horizons (Lubumbashi). Modèle entraîné sur des programmes générés et vérifiés par l'algorithme de placement, et non sur des plans réels : ce sont des esquisses de principe, pas des plans d'exécution.</p></div>
+      <div class="stats" id="stats"></div>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" id="t-surf" aria-selected="true" aria-controls="p-surf">Surfaces</button>
+        <button type="button" role="tab" id="t-dist" aria-selected="false" aria-controls="p-dist">Organisation</button>
+        <button type="button" role="tab" id="t-chk" aria-selected="false" aria-controls="p-chk">Vérifications</button>
+      </div>
+      <div class="tab-body" id="p-surf" role="tabpanel" aria-labelledby="t-surf">
+        <table><tbody id="prog"></tbody><tfoot><tr><td>Total</td><td class="num" id="prog-total"></td><td></td></tr></tfoot></table>
+        <p class="legend"><span class="tag given">demandé</span> dans votre description · <span class="tag model">ajouté</span> par le modèle</p>
+      </div>
+      <div class="tab-body scheme" id="p-dist" role="tabpanel" aria-labelledby="t-dist" hidden>
+        <div id="scheme"></div>
+        <ul class="list" id="topo"></ul>
+        <p class="legend">Le séjour et le couloir desservent les autres pièces. Trait plein : porte ; tirets : liaison prévue mais non réalisée ; point vert : entrée.</p>
+      </div>
+      <div class="tab-body" id="p-chk" role="tabpanel" aria-labelledby="t-chk" hidden>
+        <ul class="list" id="checks"></ul>
+        <p class="about">Prototype de recherche de Kenny Tshibangu Ntumba (Université Nouveaux Horizons, Lubumbashi). Le modèle a appris à partir de programmes générés, pas de plans réels : ces plans sont des esquisses, pas des plans d'exécution.</p>
+      </div>
     </aside>
   </main>
 
-  <footer class="cmdline" id="cmdline" aria-live="polite"><div><span class="k">ArchiGAN-SL</span> prêt. Tapez un programme dans le panneau de gauche.</div></footer>
+  <div class="composer">
+    <ul class="examples" id="examples" aria-label="Exemples"></ul>
+    <form class="ask" id="form" autocomplete="off">
+      <label for="prompt" class="hp">Décrivez le logement</label>
+      <textarea id="prompt" rows="1" spellcheck="false" placeholder="Décrivez le logement, ex. T3 avec balcon">T3 avec balcon et suite parentale</textarea>
+      <button class="send" type="submit" aria-label="Dessiner le plan"><svg viewBox="0 0 22 22" aria-hidden="true"><path d="M4 11h13M12 5.5 17.5 11 12 16.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </form>
+  </div>
 </div>
+<div class="scrim" id="scrim" hidden></div>
 
 <dialog class="obs" id="obs-dialog" aria-labelledby="obs-title">
-  <div class="obs-head"><h2 id="obs-title">Envoyer une observation</h2><button type="button" id="obs-close" aria-label="Fermer">×</button></div>
+  <div class="obs-head"><h2 id="obs-title">Donner votre avis</h2><button type="button" class="icon-btn" id="obs-close" aria-label="Fermer"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button></div>
   <form class="obs" id="obs-form" autocomplete="on">
-    <p>Un plan vous paraît juste, ou au contraire bizarre ? Votre message est envoyé directement à l'auteur, avec le programme et la variante affichée.</p>
+    <p>Un plan vous paraît juste, ou au contraire bizarre ? Votre message est envoyé directement à l'auteur, avec la description et le plan affiché.</p>
     <fieldset class="obs-types">
       <legend class="lbl">Votre avis</legend>
       <label><input type="radio" name="obs-type" value="Plan réussi" id="obs-t1"> Plan réussi</label>
       <label><input type="radio" name="obs-type" value="Plan à revoir" id="obs-t2"> Plan à revoir</label>
       <label><input type="radio" name="obs-type" value="Remarque" id="obs-t3" checked> Remarque</label>
     </fieldset>
-    <div><label class="lbl" for="obs-text">Observation</label><textarea id="obs-text" maxlength="3000" placeholder="Ex. : la salle d'eau devrait être plus proche des chambres."></textarea></div>
+    <div><label class="lbl" for="obs-text">Votre message</label><textarea class="field" id="obs-text" maxlength="3000" placeholder="Ex. : la salle de bain devrait être plus proche des chambres."></textarea></div>
     <div class="two">
-      <div><label class="lbl" for="obs-name">Nom (facultatif)</label><input type="text" id="obs-name" autocomplete="name"></div>
-      <div><label class="lbl" for="obs-mail">E-mail (pour une réponse)</label><input type="email" id="obs-mail" autocomplete="email"></div>
+      <div><label class="lbl" for="obs-name">Nom (facultatif)</label><input class="field" type="text" id="obs-name" autocomplete="name"></div>
+      <div><label class="lbl" for="obs-mail">E-mail (pour une réponse)</label><input class="field" type="email" id="obs-mail" autocomplete="email"></div>
     </div>
-    <label class="attach" for="obs-attach"><input type="checkbox" id="obs-attach" checked><span>Joindre le programme et la variante affichée</span></label>
+    <label class="attach" for="obs-attach"><input type="checkbox" id="obs-attach" checked><span>Joindre la description et le plan affiché</span></label>
     <div class="hp" aria-hidden="true"><label for="obs-hp">Ne pas remplir</label><input type="text" id="obs-hp" tabindex="-1" autocomplete="off"></div>
-    <div class="obs-foot"><button class="btn primary" type="submit" id="obs-send">Envoyer</button><p class="obs-status" id="obs-status" role="status"></p></div>
+    <button class="btn" type="submit" id="obs-send">Envoyer</button>
+    <p class="obs-status" id="obs-status" role="status"></p>
   </form>
 </dialog>
 
@@ -324,180 +335,197 @@ const MODEL = /*__MODEL__*/;
 // l'adresse de réception reste chez Web3Forms et n'apparaît pas dans la page.
 const WEB3FORMS_KEY = "__WEB3FORMS_KEY__";
 // Vrai seulement dans la version publiée sur claude.ai (réglé à l'assemblage) :
-// les téléchargements passent alors par la plateforme et les observations par le site Vercel.
+// les téléchargements passent alors par la plateforme et les avis par le site public.
 const ON_CLAUDE = false;
 const SITE_URL = "https://archigansite.vercel.app";
 (function () {
   const A = ArchiGAN;
   const EXAMPLES = ["T3 avec balcon", "T4 avec suite parentale et cuisine fermée", "studio de 30 m²",
     "T2 avec wc séparés et coin bureau", "T3 de 65 m² avec chambre avec dressing", "appart 5 chambres sans balcon"];
-  const ROOM_FR = { salon: "Séjour", chambre: "Chambre", douche: "Salle d'eau", toilettes: "WC",
+  const ROOM_FR = { salon: "Séjour", chambre: "Chambre", douche: "Salle de bain", toilettes: "WC",
     couloir: "Couloir", bureau: "Bureau", cuisine: "Cuisine", balcon: "Balcon", dressing: "Dressing" };
-  const SHORT = { salon: "SÉJ", chambre: "CH", douche: "SDB", toilettes: "WC", couloir: "DÉG",
-    bureau: "BUR", cuisine: "CUI", balcon: "BAL", dressing: "DRE" };
-  const TOPO_FR = { sdb_suite: "Salle d'eau en suite", wc_dans_sdb: "WC dans la salle d'eau",
-    dressing_suite: "Dressing attenant", balcon_chambre: "Balcon depuis une chambre",
-    cuisine_fermee: "Cuisine fermée", bureau_sejour: "Bureau ouvert sur le séjour" };
+  const SHORT = { salon: "SÉJ", chambre: "CH", douche: "SDB", toilettes: "WC", couloir: "COUL",
+    bureau: "BUR", cuisine: "CUI", balcon: "BAL", dressing: "DRES" };
+  const TOPO_FR = { sdb_suite: "Salle de bain dans une chambre", wc_dans_sdb: "WC dans la salle de bain",
+    dressing_suite: "Dressing ouvert sur une chambre", balcon_chambre: "Balcon accessible depuis une chambre",
+    cuisine_fermee: "Cuisine fermée (sur le couloir)", bureau_sejour: "Bureau ouvert sur le séjour" };
   const LETTERS = "ABCDEF";
   const $ = (id) => document.getElementById(id);
   const fmt = (x, d = 1) => x.toFixed(d).replace(".", ",");
   const esc = (t) => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const wide = () => window.matchMedia("(min-width: 901px)").matches;
-  let state = null, current = 0, view = null, base = null, bbox = null;
+  const large = () => window.matchMedia("(min-width: 1024px)").matches;
+  let state = null, current = 0, view = null, base = null;
 
-  const version = (document.querySelector('meta[name="version"]') || {}).content;
-  $("info").textContent = "cGAN 34 319 paramètres · placement v3" + (version ? " · " + version : "");
-
-  // ---- ligne de commande ----
-  function log(html) {
-    const d = document.createElement("div"); d.innerHTML = html; $("cmdline").append(d);
-    while ($("cmdline").children.length > 30) $("cmdline").firstChild.remove();
-    $("cmdline").scrollTop = $("cmdline").scrollHeight;
-  }
-
-  // ---- exemples ----
-  $("examples").innerHTML = EXAMPLES.map((e, i) =>
-    `<li><button type="button" data-p="${esc(e)}"><span>${String(i + 1).padStart(2, "0")}</span>${esc(e)}</button></li>`).join("");
+  // ----- saisie -----
+  const prompt = $("prompt");
+  const grow = () => { prompt.style.height = "auto"; prompt.style.height = Math.min(prompt.scrollHeight, 120) + "px"; };
+  prompt.addEventListener("input", grow);
+  prompt.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); run(); prompt.blur(); }
+  });
+  $("form").addEventListener("submit", (ev) => { ev.preventDefault(); run(); prompt.blur(); });
+  $("examples").innerHTML = EXAMPLES.map(e => `<li><button type="button" data-p="${esc(e)}">${esc(e)}</button></li>`).join("");
   $("examples").addEventListener("click", (ev) => {
     const b = ev.target.closest("button[data-p]"); if (!b) return;
-    $("prompt").value = b.dataset.p; run(true);
+    prompt.value = b.dataset.p; grow(); run();
   });
-  $("form").addEventListener("submit", (ev) => { ev.preventDefault(); run(true); });
-  $("prompt").addEventListener("keydown", (ev) => {
-    if (ev.key === "Enter" && (ev.metaKey || ev.ctrlKey)) { ev.preventDefault(); run(true); }
-  });
+  $("again").onclick = () => run();
 
-  function run(fromUser) {
-    const prompt = $("prompt").value.trim() || "T3";
-    state = A.planFromPrompt(MODEL, prompt, { n: parseInt($("n").value, 10), seed: Math.floor(Math.random() * 1e9) });
-    current = 0; render(true);
-    log(`<span class="k">Commande :</span> DESSINER « ${esc(prompt)} » → ${state.results.length} variante${state.results.length > 1 ? "s" : ""} en ${fmt(state.tTotal, 0)} ms`);
-    if (fromUser && !wide()) $("canvas").scrollIntoView({ behavior: "smooth", block: "start" });
+  function run() {
+    const p = prompt.value.trim() || "T3";
+    state = A.planFromPrompt(MODEL, p, { n: 3, seed: Math.floor(Math.random() * 1e9) });
+    current = 0; render();
   }
 
-  // ---- zoom et déplacement ----
-  function setView(v) { view = v; const s = $("plan").querySelector("svg"); if (s) s.setAttribute("viewBox", v.join(" ")); }
-  function zoom(f, cx, cy) {
-    if (!view) return;
-    const [x, y, w, h] = view, nw = w / f, nh = h / f;
-    const px = cx ?? x + w / 2, py = cy ?? y + h / 2;
-    setView([px - (px - x) / f, py - (py - y) / f, nw, nh]);
-  }
-  const toSvg = (ev) => {
-    const s = $("plan").querySelector("svg"); if (!s) return null;
-    const p = s.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY;
-    return p.matrixTransform(s.getScreenCTM().inverse());
-  };
-  $("z-in").onclick = () => zoom(1.4);
-  $("z-out").onclick = () => zoom(1 / 1.4);
-  $("z-fit").onclick = () => base && setView(base.slice());
+  // ----- zoom : molette, boutons, deux doigts ; déplacement : souris ou un doigt -----
   const canvas = $("canvas");
+  function setView(v) { view = v; const s = $("plan").querySelector("svg"); if (s) s.setAttribute("viewBox", v.join(" ")); }
+  function zoomAt(f, cx, cy) {
+    if (!view) return;
+    const [x, y, w, h] = view, nw = Math.min(Math.max(w / f, base[2] / 8), base[2] * 3), k = w / nw;
+    const px = cx ?? x + w / 2, py = cy ?? y + h / 2;
+    setView([px - (px - x) / k, py - (py - y) / k, nw, h / k]);
+  }
+  const toSvg = (cx, cy) => {
+    const s = $("plan").querySelector("svg"); if (!s) return null;
+    const p = s.createSVGPoint(); p.x = cx; p.y = cy; return p.matrixTransform(s.getScreenCTM().inverse());
+  };
+  $("z-in").onclick = () => zoomAt(1.4);
+  $("z-out").onclick = () => zoomAt(1 / 1.4);
+  $("z-fit").onclick = () => base && setView(base.slice());
   canvas.addEventListener("wheel", (ev) => {
-    if (!wide()) return;
-    ev.preventDefault(); const p = toSvg(ev); if (p) zoom(ev.deltaY < 0 ? 1.15 : 1 / 1.15, p.x, p.y);
+    ev.preventDefault(); const p = toSvg(ev.clientX, ev.clientY); if (p) zoomAt(ev.deltaY < 0 ? 1.15 : 1 / 1.15, p.x, p.y);
   }, { passive: false });
-  let drag = null;
+  const pts = new Map(); let gesture = null, lastTap = 0;
   canvas.addEventListener("pointerdown", (ev) => {
-    if (ev.pointerType !== "mouse" || ev.target.closest(".tools, .help")) return;
-    drag = { p: toSvg(ev), v: view.slice() }; canvas.classList.add("dragging"); canvas.setPointerCapture(ev.pointerId);
+    if (ev.target.closest(".zoom, .coach")) return;
+    canvas.setPointerCapture(ev.pointerId); pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    if (pts.size === 1) {
+      const now = Date.now();
+      if (now - lastTap < 300 && ev.pointerType !== "mouse") { setView(base.slice()); lastTap = 0; return; }
+      lastTap = now;
+      gesture = { type: "pan", p: toSvg(ev.clientX, ev.clientY) }; canvas.classList.add("dragging");
+    } else if (pts.size === 2) {
+      const [a, b] = [...pts.values()];
+      gesture = { type: "pinch", d: Math.hypot(a.x - b.x, a.y - b.y) };
+    }
   });
   canvas.addEventListener("pointermove", (ev) => {
-    const p = toSvg(ev);
-    if (p && bbox) $("coords").textContent = `X ${fmt((p.x - bbox.x) * 0.3, 2)} m   Y ${fmt((p.y - bbox.y) * 0.3, 2)} m`;
-    if (drag && p) { const dx = p.x - drag.p.x, dy = p.y - drag.p.y; setView([view[0] - dx, view[1] - dy, view[2], view[3]]); }
+    if (!pts.has(ev.pointerId) || !gesture) return;
+    pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    if (gesture.type === "pan" && pts.size === 1) {
+      const p = toSvg(ev.clientX, ev.clientY); if (!p) return;
+      setView([view[0] - (p.x - gesture.p.x), view[1] - (p.y - gesture.p.y), view[2], view[3]]);
+    } else if (gesture.type === "pinch" && pts.size === 2) {
+      const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+      const m = toSvg((a.x + b.x) / 2, (a.y + b.y) / 2);
+      if (m && gesture.d > 0) zoomAt(d / gesture.d, m.x, m.y);
+      gesture.d = d;
+    }
   });
-  const endDrag = () => { drag = null; canvas.classList.remove("dragging"); };
-  canvas.addEventListener("pointerup", endDrag); canvas.addEventListener("pointercancel", endDrag);
-  canvas.addEventListener("pointerleave", () => { $("coords").textContent = "X — Y —"; });
+  const up = (ev) => {
+    pts.delete(ev.pointerId);
+    if (pts.size === 1) { const [p] = [...pts.values()]; gesture = { type: "pan", p: toSvg(p.x, p.y) }; }
+    if (pts.size === 0) { gesture = null; canvas.classList.remove("dragging"); }
+  };
+  canvas.addEventListener("pointerup", up); canvas.addEventListener("pointercancel", up);
+  canvas.addEventListener("dblclick", () => base && setView(base.slice()));
+  if (window.matchMedia("(hover: hover)").matches) $("hint").textContent = "Molette pour zoomer · glissez pour déplacer · double-clic pour recadrer";
 
-  // ---- schéma de distribution ----
+  // ----- détails : onglets et volet -----
+  const tabs = [["t-surf", "p-surf"], ["t-dist", "p-dist"], ["t-chk", "p-chk"]];
+  tabs.forEach(([t, p]) => $(t).onclick = () => tabs.forEach(([t2, p2]) => {
+    $(t2).setAttribute("aria-selected", t2 === t); $(p2).hidden = t2 !== t;
+  }));
+  const details = $("details"), scrim = $("scrim");
+  function layoutDetails() { if (large()) closeSheet(); }
+  function openSheet() { details.classList.add("open"); scrim.hidden = false; $("details-close").focus(); }
+  function closeSheet() { details.classList.remove("open"); scrim.hidden = true; }
+  $("open-details").onclick = openSheet; $("details-close").onclick = closeSheet; scrim.onclick = closeSheet;
+  document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") closeSheet(); });
+  window.addEventListener("resize", () => { layoutDetails(); if (base) setView(base.slice()); });
+  layoutDetails();
+
+  // ----- schéma d'organisation -----
   function schemeSVG(r) {
-    const rooms = r.placed, byUid = Object.fromEntries(rooms.map(x => [x.uid, x]));
-    const depth = {};
+    const rooms = r.placed, byUid = Object.fromEntries(rooms.map(x => [x.uid, x])), depth = {};
     const d = (u) => depth[u] ?? (depth[u] = byUid[u].graphParent && byUid[u].graphParent in byUid ? d(byUid[u].graphParent) + 1 : 0);
     rooms.forEach(x => d(x.uid));
     const levels = []; rooms.forEach(x => (levels[depth[x.uid]] = levels[depth[x.uid]] || []).push(x));
-    const pos = {}, W = 300, rowH = 48, R = 15;
+    const pos = {}, W = 320, rowH = 52, R = 17;
     levels.forEach((lv, li) => {
       if (li > 0) lv.sort((a, b) => (pos[a.graphParent]?.x ?? 0) - (pos[b.graphParent]?.x ?? 0));
-      lv.forEach((x, i) => pos[x.uid] = { x: (i + 0.5) * W / lv.length, y: 20 + li * rowH });
+      lv.forEach((x, i) => pos[x.uid] = { x: (i + 0.5) * W / lv.length, y: 22 + li * rowH });
     });
-    const H = 20 + (levels.length - 1) * rowH + 22;
+    const H = 22 + (levels.length - 1) * rowH + 24;
     const doorSet = new Set(r.doors.map(dd => dd.rooms.slice().sort().join("|")));
     const entry = r.doors.find(dd => dd.kind === "entree");
-    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Schéma de distribution">`;
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Organisation des pièces">`;
     for (const x of rooms) if (x.graphParent && pos[x.graphParent]) {
       const a = pos[x.graphParent], b = pos[x.uid], ok = doorSet.has([x.uid, x.graphParent].sort().join("|"));
       s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" class="edge${ok ? "" : " missing"}"/>`;
     }
     for (const x of rooms) {
       const p = pos[x.uid], circ = x.name === "salon" || x.name === "couloir";
-      s += `<circle cx="${p.x}" cy="${p.y}" r="${R}" class="node${circ ? " circ" : ""}"/><text x="${p.x}" y="${p.y + 3.3}" text-anchor="middle" class="node-t">${SHORT[x.name] || x.name}</text>`;
-      if (entry && entry.rooms[0] === x.uid) s += `<circle cx="${p.x + R - 2}" cy="${p.y - R + 2}" r="4" class="entry-dot"/>`;
+      s += `<circle cx="${p.x}" cy="${p.y}" r="${R}" class="node${circ ? " circ" : ""}"/><text x="${p.x}" y="${p.y + 3.4}" text-anchor="middle" class="node-t">${SHORT[x.name] || x.name}</text>`;
+      if (entry && entry.rooms[0] === x.uid) s += `<circle cx="${p.x + R - 3}" cy="${p.y - R + 3}" r="4.5" class="entry-dot"/>`;
     }
     return s + "</svg>";
   }
 
-  // ---- affichage ----
-  function render(fit) {
+  // ----- affichage -----
+  function render() {
     const r = state.results[current], m = r.metrics, cons = state.cons, order = A.GENERATIVE_ROOMS;
-    $("q").innerHTML = `<b>« ${esc(state.prompt)} »</b> · variante ${LETTERS[current]}`;
     $("plan").innerHTML = A.renderSVG(r);
-    const s = $("plan").querySelector("svg");
-    const vb0 = s.getAttribute("viewBox").split(" ").map(Number), pad = 0.08;   // marge autour du dessin
-    base = [vb0[0] - vb0[2] * pad, vb0[1] - vb0[3] * (pad + 0.04), vb0[2] * (1 + 2 * pad), vb0[3] * (1 + 2 * pad + 0.04)];
+    const s = $("plan").querySelector("svg"), vb = s.getAttribute("viewBox").split(" ").map(Number), pad = 0.06;
+    base = [vb[0] - vb[2] * pad, vb[1] - vb[3] * pad, vb[2] * (1 + 2 * pad), vb[3] * (1 + 2 * pad)];
     s.setAttribute("preserveAspectRatio", "xMidYMid meet");
-    const xs = r.placed.map(x => x.pos[0]), ys = r.placed.map(x => x.pos[1]);
-    bbox = { x: Math.min(...xs), y: Math.min(...ys) };
-    if (fit || !view) setView(base.slice()); else setView(view);
-    $("variants").innerHTML = state.results.map((x, i) =>
-      `<button type="button" role="tab" aria-selected="${i === current}" data-i="${i}">Variante ${LETTERS[i]} · ${fmt(x.metrics.surface, 0)} m²</button>`).join("");
+    setView(base.slice());
 
-    $("props").innerHTML = [
-      ["Surface", fmt(m.surface, 1) + " m²"], ["Pièces", m.nbPieces],
-      ["Portes", m.portes], ["Compacité", fmt(m.compacite, 2)],
-    ].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+    $("variants").innerHTML = state.results.map((x, i) =>
+      `<button type="button" aria-pressed="${i === current}" data-i="${i}" aria-label="Variante ${LETTERS[i]}">${LETTERS[i]}</button>`).join("");
+    $("summary").innerHTML = `<b>${fmt(m.surface, 0)} m²</b> · ${m.nbPieces} pièces`;
+
+    $("stats").innerHTML = [["Surface", fmt(m.surface, 1) + " m²"], ["Pièces", m.nbPieces], ["Portes", m.portes]]
+      .map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join("");
 
     const rows = r.placed.slice().sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name)), count = {};
     $("prog").innerHTML = rows.map(x => {
       count[x.name] = (count[x.name] || 0) + 1;
       const total = r.pieces[x.name] || 0, given = cons[order.indexOf(x.name)] >= 0;
       return `<tr><td>${ROOM_FR[x.name]}${total > 1 ? " " + count[x.name] : ""}</td><td class="num">${fmt(x.pos[2] * x.pos[3] * 0.09, 1)} m²</td>` +
-             `<td class="src"><span class="chip ${given ? "given" : "model"}">${given ? "requête" : "cGAN"}</span></td></tr>`;
+             `<td class="src"><span class="tag ${given ? "given" : "model"}">${given ? "demandé" : "ajouté"}</span></td></tr>`;
     }).join("");
     $("prog-total").textContent = fmt(m.surface, 1) + " m²";
 
     $("scheme").innerHTML = schemeSVG(r);
     $("topo").innerHTML = A.TOPO_NAMES.filter(k => r.topo[k]).map(k => {
       const given = cons[order.length + A.TOPO_NAMES.indexOf(k)] >= 0, ok = m.topoObtenue[k] === r.topo[k];
-      return `<li><span>${TOPO_FR[k]}${ok ? "" : ' <span class="state ko">non réalisé</span>'}</span><span class="chip ${given ? "given" : "model"}">${given ? "requête" : "cGAN"}</span></li>`;
+      return `<li><span>${TOPO_FR[k]}</span>${ok ? `<span class="tag ${given ? "given" : "model"}">${given ? "demandé" : "ajouté"}</span>` : '<span class="ko">non réalisé</span>'}</li>`;
     }).join("");
 
-    const st = (ok, yes = "conforme", no = "à revoir") => `<span class="state ${ok ? "ok" : "ko"}">${ok ? yes : no}</span>`;
+    const ck = (ok, yes = "Oui", no = "À revoir") => `<span class="${ok ? "ok" : "ko"}">${ok ? yes : no}</span>`;
     $("checks").innerHTML = [
-      ["Toutes les pièces accessibles", st(m.connexe)],
-      ["Aucune pièce privée traversée", st(m.accesDirect >= 0.999)],
-      ["Aucune porte interdite", st(m.portesInterdites === 0)],
-      ["Porte d'entrée", st(m.entree, "présente", "absente")],
-      ["Portes par pièce privée", `<b>${fmt(m.portesPiecePrivee, 2)}</b>`],
-      ["Surface demandée", `<b>${state.footprint.surface ? fmt(state.footprint.surface, 0) + " m²" : "—"}</b>`],
+      ["Toutes les pièces sont accessibles", ck(m.connexe)],
+      ["On ne traverse ni chambre ni salle de bain", ck(m.accesDirect >= 0.999)],
+      ["Aucune porte mal placée (WC sur cuisine…)", ck(m.portesInterdites === 0)],
+      ["Porte d'entrée", ck(m.entree, "Présente", "Absente")],
+      ["Surface demandée", `<span>${state.footprint.surface ? fmt(state.footprint.surface, 0) + " m²" : "non précisée"}</span>`],
     ].map(([k, v]) => `<li><span>${k}</span>${v}</li>`).join("");
   }
-
   $("variants").addEventListener("click", (ev) => {
     const b = ev.target.closest("button[data-i]"); if (!b) return;
-    current = +b.dataset.i; render(true);
-    log(`<span class="k">Commande :</span> PRÉSENTATION variante ${LETTERS[current]}`);
+    current = +b.dataset.i; render();
   });
 
-  // ---- export SVG (fond blanc, traits noirs, pour l'impression) ----
+  // ----- export SVG (fond blanc, traits noirs) -----
   $("m-export").onclick = async () => {
     if (!state) return;
     const r = state.results[current];
     const css = `.room{fill:#fff;stroke:#111}.room.balcon{fill:#eee}.wall{stroke:#111;stroke-linecap:square}.gap{fill:#fff}` +
-      `.leaf,.swing{stroke:#111;fill:none}.entry{stroke:#c0392b}.entry-label{fill:#c0392b;font-family:monospace}` +
-      `.label{fill:#111;font-family:monospace}.area{fill:#555;font-family:monospace}.dim{stroke:#555;fill:none}` +
-      `.dim-text{fill:#555;font-family:monospace}.scale-a{fill:#111;stroke:#111}.scale-b{fill:#fff;stroke:#111}`;
+      `.leaf,.swing{stroke:#111;fill:none}.entry{stroke:#1d6b4f}.entry-label{fill:#1d6b4f;font-family:sans-serif}` +
+      `.label{fill:#111;font-family:sans-serif;font-weight:700}.area{fill:#555;font-family:sans-serif}.dim{stroke:#555;fill:none}` +
+      `.dim-text{fill:#555;font-family:sans-serif}.scale-a{fill:#111;stroke:#111}.scale-b{fill:#fff;stroke:#111}`;
     const raw = A.renderSVG(r), cut = raw.indexOf(">") + 1;
     const vb = raw.match(/viewBox="([^"]+)"/)[1].split(" ").map(Number);
     const bg = `<rect x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="#fff"/>`;
@@ -506,22 +534,19 @@ const SITE_URL = "https://archigansite.vercel.app";
     const name = "ArchiGAN-SL_" + state.prompt.replace(/[^\p{L}\p{N}]+/gu, "_").slice(0, 40) + "_" + LETTERS[current] + ".svg";
     if (ON_CLAUDE) {
       const dl = window.claude ? await window.claude.use("downloads") : null;
-      if (!dl) { log(`<span class="k">Commande :</span> EXPORTER indisponible ici. Utilisez ${SITE_URL}`); return; }
-      try { await dl.save({ filename: name, data: blob }); log(`<span class="k">Commande :</span> EXPORTER ${esc(name)}`); }
-      catch (e) { log(`<span class="k">Commande :</span> EXPORTER ${e && e.code === "declined" ? "annulé" : "impossible ici"}`); }
+      if (!dl) return;
+      try { await dl.save({ filename: name, data: blob }); } catch (e) {}
       return;
     }
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    log(`<span class="k">Commande :</span> EXPORTER ${esc(name)}`);
   };
 
-  // ---- aide ----
+  // ----- aide (première visite) -----
   const help = $("help");
   const closeHelp = () => { help.hidden = true; try { localStorage.setItem("archigan-help-vu", "1"); } catch (e) {} };
   $("help-ok").onclick = closeHelp;
-  help.addEventListener("click", (ev) => { if (ev.target === help) closeHelp(); });
   $("m-help").onclick = () => { help.hidden = false; $("help-ok").focus(); };
   let seen = false; try { seen = localStorage.getItem("archigan-help-vu") === "1"; } catch (e) {}
   if (!seen) help.hidden = false;
@@ -533,22 +558,20 @@ const SITE_URL = "https://archigansite.vercel.app";
              pieces: A.GENERATIVE_ROOMS.filter(n => r.pieces[n]).map(n => `${ROOM_FR[n]} ${r.pieces[n]}`).join(", "),
              distribution: A.TOPO_NAMES.filter(k => r.topo[k]).map(k => TOPO_FR[k]).join(", ") || "standard" };
   };
-  run(false);
+  grow(); run();
 })();
 </script>
 <script>
-// Observations : envoi par e-mail via Web3Forms
+// Avis : envoi par e-mail via Web3Forms
 (function () {
   const $ = (id) => document.getElementById(id);
   const dlg = $("obs-dialog"), form = $("obs-form"), status = $("obs-status"), send = $("obs-send");
   const say = (msg, cls) => { status.textContent = msg; status.className = "obs-status " + (cls || ""); };
-  $("m-obs").onclick = () => { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", ""); $("obs-text").focus(); };
+  $("m-obs").onclick = () => { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", ""); };
   $("obs-close").onclick = () => dlg.close ? dlg.close() : dlg.removeAttribute("open");
   if (ON_CLAUDE) {
-    // claude.ai bloque les envois vers des services extérieurs : on renvoie vers le site.
-    form.innerHTML = `<p>Pour envoyer une observation à l'auteur, ouvrez la version publique du site :
-      <a href="${SITE_URL}" target="_blank" rel="noopener">${SITE_URL.replace("https://", "")}</a>,
-      puis le menu « Observations ».</p>`;
+    form.innerHTML = `<p>Pour envoyer votre avis à l'auteur, ouvrez la version publique :
+      <a href="${SITE_URL}" target="_blank" rel="noopener">${SITE_URL.replace("https://", "")}</a>, puis « Avis ».</p>`;
     return;
   }
   const configured = /^[0-9a-f-]{36}$/i.test(WEB3FORMS_KEY);
@@ -557,7 +580,7 @@ const SITE_URL = "https://archigansite.vercel.app";
     ev.preventDefault();
     if (!configured || $("obs-hp").value) return;
     const texte = $("obs-text").value.trim();
-    if (!texte) { say("Écrivez votre observation avant d'envoyer.", "err"); $("obs-text").focus(); return; }
+    if (!texte) { say("Écrivez votre message avant d'envoyer.", "err"); $("obs-text").focus(); return; }
     const mail = $("obs-mail").value.trim();
     if (mail && !$("obs-mail").checkValidity()) { say("L'adresse e-mail semble incomplète.", "err"); $("obs-mail").focus(); return; }
     const type = (form.querySelector("input[name=obs-type]:checked") || {}).value || "Remarque";
@@ -574,7 +597,7 @@ const SITE_URL = "https://archigansite.vercel.app";
       const res = await fetch("https://api.web3forms.com/submit", { method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(payload) });
       const out = await res.json().catch(() => ({}));
-      if (res.ok && out.success) { $("obs-text").value = ""; say("Merci, votre observation a bien été envoyée.", "sent"); }
+      if (res.ok && out.success) { $("obs-text").value = ""; say("Merci, votre avis a bien été envoyé.", "sent"); }
       else say("L'envoi a échoué. Réessayez dans un instant.", "err");
     } catch (e) {
       say("Impossible de joindre le service d'envoi. Vérifiez votre connexion et réessayez.", "err");
