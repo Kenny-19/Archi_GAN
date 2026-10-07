@@ -1,246 +1,326 @@
 <title>ArchiGAN-SL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&family=Architects+Daughter&display=swap">
 <style>
-/* Mise en page : table à dessin. Panneau de requête à gauche, planche à droite, cartouche technique dessous. */
+/* Mise en page : une planche d'architecte. Cadre avec repères de grille, dessin au centre,
+   cartouche en bas à droite. Calque jaune en clair, bleu de tirage en sombre. */
 :root {
-  --bg: #eef0ec;          /* papier calque */
-  --panel: #f8f9f6;
-  --sheet: #ffffff;       /* planche */
-  --ink: #1b2124;         /* graphite */
-  --muted: #5b6569;
-  --rule: #cfd5d1;
-  --accent: #2c49c9;      /* encre bleue de tireur de plans */
-  --accent-soft: #e4e8fb;
-  --given: #8a5a00;       /* valeur imposée par la requête */
-  --given-soft: #f6ecd9;
-  --ok: #1f7a4d;
-  --warn: #a4501c;
-  --plan-paper: #ffffff;
-  --plan-balcony: #eef1f6;
-  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --paper: #f3ecc8;        /* calque jaune d'esquisse */
+  --paper-2: #ebe2b4;
+  --ink: #26231c;          /* graphite */
+  --ink-soft: #6b6450;
+  --line: #b9ad7e;
+  --red: #b3261e;          /* crayon rouge de correction */
+  --plan: #fbf7e3;         /* intérieur des pièces */
+  --plan-balcony: #e7dfb9;
+  --ok: #3f6a2c;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --text: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --hand: "Architects Daughter", "Comic Neue", cursive;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #111517; --panel: #171c1f; --sheet: #1b2124; --ink: #e5e9ea; --muted: #98a3a7;
-    --rule: #2d3539; --accent: #93a6ff; --accent-soft: #232b48; --given: #e2b45c; --given-soft: #3a3020;
-    --ok: #62c795; --warn: #f0a070; --plan-paper: #1b2124; --plan-balcony: #222a33;
-    color-scheme: dark;
+    --paper: #13304f; --paper-2: #0f2843; --ink: #e8eef6; --ink-soft: #9fb3cc; --line: #3e5f86;
+    --red: #ff8f7a; --plan: #163759; --plan-balcony: #1b4068; --ok: #9fdc86; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #111517; --panel: #171c1f; --sheet: #1b2124; --ink: #e5e9ea; --muted: #98a3a7;
-  --rule: #2d3539; --accent: #93a6ff; --accent-soft: #232b48; --given: #e2b45c; --given-soft: #3a3020;
-  --ok: #62c795; --warn: #f0a070; --plan-paper: #1b2124; --plan-balcony: #222a33;
-  color-scheme: dark;
+  --paper: #13304f; --paper-2: #0f2843; --ink: #e8eef6; --ink-soft: #9fb3cc; --line: #3e5f86;
+  --red: #ff8f7a; --plan: #163759; --plan-balcony: #1b4068; --ok: #9fdc86; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font-family: var(--font-display); font-size: 15px;
-       line-height: 1.5; }
-.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 20px 40px;
-        display: grid; gap: 18px; }
+html { -webkit-text-size-adjust: 100%; }
+body { background: var(--paper); color: var(--ink); font-family: var(--text); font-size: 15.5px; line-height: 1.55;
+       background-image: radial-gradient(color-mix(in srgb, var(--ink) 7%, transparent) 0.6px, transparent 0.6px);
+       background-size: 14px 14px; overflow-x: hidden; }
+.sheet { max-width: 1260px; margin: 0 auto; padding-inline: 22px; padding-block: 26px 36px; }
+.frame { border: 2px solid var(--ink); position: relative; padding: 26px 26px 0; display: grid; gap: 26px; }
+.frame::before { content: ""; position: absolute; inset: 5px; border: 0.5px solid var(--ink); pointer-events: none; }
+.frame > * { min-width: 0; }
+/* repères de grille dans les marges */
+.grid-ref { position: absolute; font-family: var(--display); font-size: 0.72rem; color: var(--ink-soft);
+            display: flex; justify-content: space-around; pointer-events: none; }
+.grid-ref.top { top: -1.25rem; left: 0; right: 0; }
+.grid-ref.left { left: -1.05rem; top: 0; bottom: 0; flex-direction: column; align-items: center; }
 
-header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px;
-             border-bottom: 1px solid var(--rule); padding-bottom: 14px; }
-header.top h1 { margin: 0; font-size: 1.75rem; font-weight: 800; font-stretch: 112%;
-                letter-spacing: -0.01em; }
-.beta { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
-        border: 1px solid var(--accent); color: var(--accent); padding: 1px 7px; border-radius: 3px; }
-header.top p { margin: 0; color: var(--muted); flex-basis: 100%; max-width: 70ch; text-wrap: pretty; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; letter-spacing: 0.01em; margin: 0; text-wrap: balance; }
+.hand { font-family: var(--hand); }
 
-.layout { display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); gap: 18px; align-items: start; }
-@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+/* en-tête */
+.head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 24px; align-items: end;
+        border-bottom: 1.5px solid var(--ink); padding-bottom: 14px; }
+.head h1 { font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: 0.95; text-transform: uppercase; }
+.head h1 small { display: block; font-size: max(0.36em, 1rem); font-weight: 500; letter-spacing: 0.03em; color: var(--ink-soft); margin-top: 8px; text-transform: none; }
+.head .note { font-family: var(--hand); color: var(--red); font-size: 1.05rem; transform: rotate(-2deg); max-width: 24ch; line-height: 1.25; margin: 0; }
 
-.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 18px;
-         display: grid; gap: 16px; min-width: 0; }
-.eyebrow { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
-           color: var(--muted); margin: 0 0 6px; }
-label.eyebrow { display: block; }
-textarea { width: 100%; min-height: 84px; resize: vertical; font: inherit; font-size: 1.02rem; color: var(--ink);
-           background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 10px 12px; }
-textarea:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
-  outline: 2px solid var(--accent); outline-offset: 2px; }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { font: inherit; font-size: 0.84rem; color: var(--ink); background: transparent; border: 1px solid var(--rule);
-        border-radius: 999px; padding: 3px 10px; cursor: pointer; }
-.chip:hover { border-color: var(--accent); color: var(--accent); }
-#n { width: 100%; font: inherit; color: var(--ink); background: var(--sheet);
-       border: 1px solid var(--rule); border-radius: 4px; padding: 6px 8px; font-variant-numeric: tabular-nums; }
-.go { font: inherit; font-weight: 700; font-stretch: 110%; letter-spacing: 0.02em; color: #fff; background: var(--accent);
-      border: 0; border-radius: 4px; padding: 11px 14px; cursor: pointer; }
-:root[data-theme="dark"] .go { color: #0f1424; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .go { color: #0f1424; } }
-.go:hover { filter: brightness(1.08); }
-.hint { font-size: 0.82rem; color: var(--muted); margin: 0; }
+/* zone de travail */
+.work { display: grid; grid-template-columns: minmax(260px, 330px) minmax(0, 1fr); border: 1.5px solid var(--ink); }
+.brief { border-right: 1.5px solid var(--ink); padding: 18px; display: grid; gap: 16px; align-content: start; min-width: 0; }
+.field-label { font-family: var(--display); font-weight: 600; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px; }
+textarea, input[type=text], input[type=email], select {
+  width: 100%; font: inherit; font-size: max(1rem, 16px); color: var(--ink); background: transparent; border: 0;
+  border-bottom: 1.5px solid var(--ink); border-radius: 0; padding: 6px 2px; }
+select { padding-right: 18px; }
+#prompt { font-family: var(--hand); font-size: 1.3rem; line-height: 1.72rem; min-height: 92px; resize: vertical;
+          background-image: repeating-linear-gradient(transparent 0 calc(1.72rem - 1px), var(--line) calc(1.72rem - 1px) 1.72rem);
+          border: 0; padding: 0 2px; }
+textarea:focus-visible, input:focus-visible, select:focus-visible, button:focus-visible {
+  outline: 2px dashed var(--red); outline-offset: 3px; }
+.sketches { display: grid; margin: 0; padding: 0; list-style: none; }
+.sketches button { font: inherit; text-align: left; width: 100%; background: none; border: 0; color: var(--ink);
+  padding: 7px 0; border-bottom: 1px dotted var(--line); cursor: pointer; display: flex; gap: 10px; }
+.sketches button span:first-child { font-family: var(--display); color: var(--ink-soft); min-width: 2.2em; }
+.sketches button:hover span:last-child { text-decoration: underline; text-decoration-color: var(--red); text-underline-offset: 3px; }
+.row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: end; }
+.btn { font-family: var(--display); font-weight: 700; font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.06em;
+       color: var(--paper); background: var(--ink); border: 0; padding: 11px 20px; cursor: pointer; min-height: 44px; }
+.btn:hover { background: var(--red); }
+.btn:disabled { opacity: 0.5; cursor: default; background: var(--ink); }
+.small { font-size: 0.86rem; color: var(--ink-soft); margin: 0; }
 
-.sheet { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; min-width: 0;
-         display: grid; grid-template-rows: auto 1fr auto; }
-.sheet-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline;
-              padding: 12px 16px; border-bottom: 1px solid var(--rule); }
-.sheet-head .q { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
-.sheet-head .meta { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.plan-zone { padding: 10px 16px; display: grid; place-items: center; min-height: 420px; }
-.plan-zone svg { width: 100%; max-height: 640px; color: var(--ink); }
-.variants { display: flex; gap: 8px; padding: 0 16px 14px; flex-wrap: wrap; }
-.variants button { font: inherit; font-family: var(--font-mono); font-size: 0.78rem; background: transparent;
-  color: var(--muted); border: 1px solid var(--rule); border-radius: 4px; padding: 4px 9px; cursor: pointer; }
-.variants button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.drawing { min-width: 0; display: grid; grid-template-rows: auto 1fr auto; }
+.drawing-bar { display: flex; flex-wrap: wrap; gap: 2px 16px; justify-content: space-between; align-items: baseline;
+               padding: 10px 18px; border-bottom: 1px solid var(--ink); }
+.drawing-bar .q { font-family: var(--hand); font-size: 1.15rem; min-width: 0; overflow-wrap: anywhere; }
+.drawing-bar .meta { font-family: var(--display); font-size: 0.98rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.plan-zone { padding: 8px 14px; display: grid; place-items: center; min-height: 440px; min-width: 0; }
+.plan-zone svg { width: 100%; height: auto; max-height: 660px; display: block; }
+.variants { display: flex; border-top: 1px solid var(--ink); }
+.variants button { flex: 1 1 0; min-width: 0; font-family: var(--display); font-weight: 600; font-size: 1rem; text-transform: uppercase;
+  letter-spacing: 0.04em; background: none; border: 0; border-right: 1px solid var(--ink); color: var(--ink-soft);
+  padding: 9px 4px; cursor: pointer; font-variant-numeric: tabular-nums; min-height: 44px; }
+.variants button:last-child { border-right: 0; }
+.variants button[aria-pressed="true"] { color: var(--ink); background: var(--paper-2); box-shadow: inset 0 -3px 0 var(--red); }
 
-/* plan */
-.plan-svg .room { fill: var(--plan-paper); stroke: var(--ink); }
+/* dessin du plan */
+.plan-svg .room { fill: var(--plan); stroke: var(--ink); }
 .plan-svg .room.balcon { fill: var(--plan-balcony); }
 .plan-svg .wall { stroke: var(--ink); stroke-linecap: square; }
-.plan-svg .gap { fill: var(--plan-paper); }
+.plan-svg .gap { fill: var(--plan); }
 .plan-svg .leaf, .plan-svg .swing { stroke: var(--ink); fill: none; }
-.plan-svg .entry { stroke: var(--accent); }
-.plan-svg .entry-label { fill: var(--accent); font-family: var(--font-mono); letter-spacing: 0.1em; }
-.plan-svg .label { fill: var(--ink); font-family: var(--font-mono); letter-spacing: 0.06em; }
-.plan-svg .area { fill: var(--muted); font-family: var(--font-mono); }
+.plan-svg .entry { stroke: var(--red); }
+.plan-svg .entry-label { fill: var(--red); font-family: var(--hand); }
+.plan-svg .label { fill: var(--ink); font-family: var(--display); font-weight: 600; letter-spacing: 0.04em; }
+.plan-svg .area { fill: var(--ink-soft); font-family: var(--display); }
+.plan-svg .dim { stroke: var(--ink-soft); fill: none; }
+.plan-svg .dim-text { fill: var(--ink-soft); font-family: var(--display); }
+.plan-svg .scale-a { fill: var(--ink); stroke: var(--ink); }
+.plan-svg .scale-b { fill: var(--plan); stroke: var(--ink); }
+
+/* bas de planche : surfaces, schéma, visas */
+.lower { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1.5px solid var(--ink); }
+.lower > section { padding: 14px 16px; border-right: 1px solid var(--ink); min-width: 0; }
+.lower > section:last-child { border-right: 0; }
+.lower h2 { font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--ink); padding-bottom: 4px; margin-bottom: 8px; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { font-family: var(--display); font-weight: 600; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em;
+     text-align: left; color: var(--ink-soft); padding: 2px 0 4px; }
+td { padding: 4px 0; border-bottom: 1px dotted var(--line); font-size: 0.93rem; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+td.src { text-align: right; font-family: var(--hand); font-size: 0.92rem; padding-left: 8px; }
+.by-prompt { color: var(--ink); } .by-model { color: var(--red); }
+tfoot td { border-bottom: 0; border-top: 1.5px solid var(--ink); font-weight: 600; padding-top: 5px; }
+.scheme svg { width: 100%; height: auto; display: block; max-height: 300px; }
+.scheme .edge { stroke: var(--ink); stroke-width: 1.2; fill: none; }
+.scheme .edge.missing { stroke: var(--red); stroke-dasharray: 3 3; }
+.scheme .node { fill: var(--plan); stroke: var(--ink); stroke-width: 1.2; }
+.scheme .node.circ { fill: var(--paper-2); }
+.scheme .node-t { fill: var(--ink); font-family: var(--display); font-size: 10.5px; font-weight: 600; }
+.scheme .entry-dot { fill: var(--red); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.8rem; color: var(--ink-soft); margin-top: 8px; }
+ul.visas { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+ul.visas li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; border-bottom: 1px dotted var(--line); padding: 4px 0; font-size: 0.93rem; }
+ul.visas b { font-family: var(--display); font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.stamp { font-family: var(--display); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.8rem; padding: 0 6px;
+         border: 1.5px solid currentColor; display: inline-block; transform: rotate(-3deg); }
+.stamp.ok { color: var(--ok); } .stamp.ko { color: var(--red); }
 
 /* cartouche */
-.cartouche { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-@media (max-width: 960px) { .cartouche { grid-template-columns: minmax(0, 1fr); } }
-.cartouche section { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; min-width: 0; }
-.cartouche h2 { font-size: 0.95rem; font-weight: 700; margin: 0 0 4px; }
-.cartouche .sub { font-size: 0.82rem; color: var(--muted); margin: 0 0 10px; }
-table.prog { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-table.prog td { padding: 4px 0; border-bottom: 1px dashed var(--rule); font-size: 0.9rem; }
-table.prog td.n { text-align: right; font-family: var(--font-mono); width: 2.5em; }
-table.prog td.src { text-align: right; width: 7.5em; }
-.tag { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase;
-       padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
-.tag.given { color: var(--given); background: var(--given-soft); }
-.tag.model { color: var(--accent); background: var(--accent-soft); }
-.legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 0.8rem; color: var(--muted); }
-ul.topo { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-ul.topo li { display: flex; justify-content: space-between; gap: 8px; font-size: 0.9rem; border-bottom: 1px dashed var(--rule); padding-bottom: 4px; }
-ul.topo li.off { color: var(--muted); }
-dl.metrics { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; margin: 0; font-size: 0.9rem; }
-dl.metrics dt { color: var(--muted); }
-dl.metrics dd { margin: 0; text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.good { color: var(--ok); } .bad { color: var(--warn); }
+.cartouche { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1.5px solid var(--ink); border-right: 0; border-bottom: 0; margin-left: auto; width: min(100%, 760px); }
+.cartouche > div { border-right: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 4px 8px; min-width: 0; }
+.cartouche .k { display: block; font-family: var(--display); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+.cartouche .v { font-family: var(--display); font-weight: 600; font-size: 1.02rem; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.cartouche .title { grid-column: span 4; grid-row: span 2; display: grid; align-content: center; }
+.cartouche .title .v { font-size: 1.6rem; font-weight: 700; text-transform: uppercase; line-height: 1; }
+.cartouche .wide { grid-column: span 6; }
+.cartouche .half { grid-column: span 2; }
+.cartouche .v.hand { font-family: var(--hand); font-weight: 400; }
 
-/* retours */
-.feedback { display: grid; grid-template-columns: minmax(260px, 360px) minmax(0, 1fr); gap: 18px; align-items: start; }
-@media (max-width: 860px) { .feedback { grid-template-columns: minmax(0, 1fr); } }
-.feedback h2 { font-size: 1.15rem; font-weight: 800; font-stretch: 108%; margin: 0 0 4px; }
-.fb-form { display: grid; gap: 12px; }
-.fb-types { display: flex; flex-wrap: wrap; gap: 6px; border: 0; padding: 0; margin: 0; }
-.fb-types legend { padding: 0; margin-bottom: 6px; }
-.fb-types label { font-size: 0.85rem; border: 1px solid var(--rule); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
-.fb-types input { position: absolute; opacity: 0; pointer-events: none; }
-.fb-types input:checked + span { color: var(--accent); }
-.fb-types label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
-.fb-types label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
-.fb-attach { display: flex; gap: 8px; align-items: flex-start; font-size: 0.86rem; color: var(--muted); }
-.fb-attach input { margin-top: 3px; accent-color: var(--accent); }
-.fb-status { font-size: 0.84rem; margin: 0; min-height: 1.2em; }
-.fb-status.err { color: var(--warn); } .fb-status.okmsg { color: var(--ok); }
-.fb-list { display: grid; gap: 10px; min-width: 0; }
-.fb-empty { color: var(--muted); font-size: 0.92rem; border: 1px dashed var(--rule); border-radius: 6px; padding: 16px; margin: 0; }
-.fb-item { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; min-width: 0; }
-.fb-head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; font-size: 0.84rem; color: var(--muted); }
-.fb-head .who { color: var(--ink); font-weight: 600; }
-.fb-head .del { margin-left: auto; font: inherit; font-size: 0.8rem; color: var(--muted); background: none; border: 0; cursor: pointer; text-decoration: underline; }
-.fb-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.fb-ctx { font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); overflow-wrap: anywhere; }
-.tag.t-ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
-.tag.t-bad { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
-.tag.t-note { color: var(--muted); background: color-mix(in srgb, var(--muted) 14%, transparent); }
+/* observations (retours par e-mail) */
+.observe { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); border: 1.5px solid var(--ink); }
+.observe .intro { padding: 18px; border-right: 1.5px solid var(--ink); display: grid; gap: 10px; align-content: start; min-width: 0; }
+.observe h2 { font-size: 1.7rem; text-transform: uppercase; }
+.observe .intro p { margin: 0; max-width: 58ch; }
+.observe .redline { font-family: var(--hand); color: var(--red); font-size: 1.05rem; }
+form.obs { padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.obs-types { display: flex; flex-wrap: wrap; gap: 6px 18px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.obs-types legend { padding: 0; }
+.obs-types label { display: flex; align-items: center; gap: 6px; cursor: pointer; min-height: 32px; }
+.obs-types input { accent-color: var(--red); width: 16px; height: 16px; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+#obs-text { min-height: 96px; resize: vertical; font-family: var(--hand); font-size: 1.1rem; }
+.attach { display: flex; gap: 8px; align-items: flex-start; font-size: 0.9rem; }
+.attach input { accent-color: var(--red); margin-top: 4px; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.obs-status { margin: 0; min-height: 1.3em; font-size: 0.92rem; }
+.obs-status.err { color: var(--red); } .obs-status.sent { color: var(--ok); font-family: var(--hand); font-size: 1.1rem; }
 
-footer.about { border-top: 1px solid var(--rule); padding-top: 14px; color: var(--muted); font-size: 0.85rem;
-               display: grid; gap: 6px; max-width: 90ch; }
-footer.about p { margin: 0; text-wrap: pretty; }
-footer.about strong { color: var(--ink); font-weight: 600; }
-@media (prefers-reduced-motion: no-preference) { .plan-zone svg { animation: fade .25s ease-out; } }
-@keyframes fade { from { opacity: .4; } to { opacity: 1; } }
+footer.notice { border-top: 1.5px solid var(--ink); padding: 12px 0 18px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; font-size: 0.86rem; color: var(--ink-soft); }
+footer.notice p { margin: 0; }
+footer.notice b { color: var(--ink); font-family: var(--display); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+@media (prefers-reduced-motion: no-preference) { .plan-zone svg { animation: ink .35s ease-out; } }
+@keyframes ink { from { opacity: .3; } to { opacity: 1; } }
+
+/* ---- tablette ---- */
+@media (max-width: 1000px) {
+  .lower { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .lower > .checks { grid-column: span 2; border-right: 0; border-top: 1px solid var(--ink); }
+  .lower > .scheme { border-right: 0; }
+}
+@media (max-width: 900px) {
+  .work { grid-template-columns: minmax(0, 1fr); }
+  .brief { border-right: 0; border-bottom: 1.5px solid var(--ink); }
+  .observe { grid-template-columns: minmax(0, 1fr); }
+  .observe .intro { border-right: 0; border-bottom: 1.5px solid var(--ink); }
+}
+/* ---- téléphone ---- */
+@media (max-width: 680px) {
+  body { font-size: 15px; background-size: 12px 12px; }
+  .sheet { padding-inline: 10px; padding-block: 10px 24px; }
+  .frame { padding: 14px 12px 0; gap: 18px; border-width: 1.5px; }
+  .frame::before { inset: 3px; }
+  .grid-ref { display: none; }
+  .head { grid-template-columns: minmax(0, 1fr); padding-bottom: 10px; }
+  .head .note { transform: none; font-size: 0.98rem; }
+  .brief { padding: 14px 12px; gap: 14px; }
+  #prompt { font-size: 1.2rem; min-height: 80px; }
+  .drawing-bar { padding: 8px 12px; }
+  .plan-zone { min-height: 260px; padding: 4px 6px; }
+  .plan-zone svg { max-height: 70vh; }
+  .variants button { font-size: 0.9rem; }
+  .lower { grid-template-columns: minmax(0, 1fr); }
+  .lower > section, .lower > .checks { grid-column: auto; border-right: 0; border-top: 0; border-bottom: 1px solid var(--ink); padding: 12px; }
+  .lower > section:last-child { border-bottom: 0; }
+  .cartouche { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cartouche .title, .cartouche .wide { grid-column: span 2; grid-row: auto; }
+  .cartouche .half { grid-column: span 1; }
+  .cartouche .title .v { font-size: 1.3rem; }
+  .observe h2 { font-size: 1.4rem; }
+  .observe .intro, form.obs { padding: 14px 12px; }
+  .two { grid-template-columns: minmax(0, 1fr); }
+  footer.notice { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+}
 </style>
 
-<div class="wrap">
-  <header class="top">
-    <h1>ArchiGAN-SL</h1><span class="beta">version bêta</span>
-    <p>Décrivez un logement en quelques mots. Un GAN conditionnel complète le programme et le graphe de distribution, puis un algorithme de placement dessine le plan. Tout s'exécute dans votre navigateur.</p>
-  </header>
+<div class="sheet">
+  <div class="frame">
+    <div class="grid-ref top" aria-hidden="true"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span></div>
+    <div class="grid-ref left" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span></div>
 
-  <div class="layout">
-    <form class="panel" id="form" autocomplete="off">
-      <div>
-        <label class="eyebrow" for="prompt">Requête</label>
-        <textarea id="prompt" name="prompt">T3 avec balcon et suite parentale</textarea>
-      </div>
-      <div>
-        <p class="eyebrow">Exemples</p>
-        <div class="chips" id="examples"></div>
-      </div>
-      <div>
-        <label class="eyebrow" for="n">Variantes</label>
-        <select id="n"><option value="1">1</option><option value="3" selected>3</option><option value="6">6</option></select>
-      </div>
-      <button class="go" type="submit">Générer le plan</button>
-      <p class="hint">Chaque clic propose de nouveaux plans pour la même requête.</p>
-    </form>
+    <header class="head">
+      <h1>ArchiGAN-SL<small>Esquisses de logements dessinées à partir d'une phrase</small></h1>
+      <p class="note">version d'essai : vos remarques sont les bienvenues, en bas de la planche</p>
+    </header>
 
-    <article class="sheet" aria-live="polite">
-      <div class="sheet-head">
-        <span class="q" id="q"></span>
-        <span class="meta" id="meta"></span>
-      </div>
-      <div class="plan-zone" id="plan"></div>
-      <div class="variants" id="variants"></div>
-    </article>
-  </div>
+    <div class="work">
+      <form class="brief" id="form" autocomplete="off">
+        <div>
+          <label class="field-label" for="prompt">Le programme</label>
+          <textarea id="prompt" name="prompt" spellcheck="false">T3 avec balcon et suite parentale</textarea>
+        </div>
+        <div>
+          <span class="field-label">Esquisses rapides</span>
+          <ul class="sketches" id="examples"></ul>
+        </div>
+        <div class="row">
+          <div>
+            <label class="field-label" for="n">Variantes</label>
+            <select id="n"><option value="1">1</option><option value="3" selected>3</option><option value="6">6</option></select>
+          </div>
+          <button class="btn" type="submit">Dessiner</button>
+        </div>
+        <p class="small">Chaque clic propose de nouvelles variantes pour le même programme.</p>
+      </form>
 
-  <div class="cartouche">
-    <section>
-      <h2>Programme</h2>
-      <p class="sub">Nombre de pièces de chaque type.</p>
-      <table class="prog"><tbody id="prog"></tbody></table>
-      <div class="legend"><span><span class="tag given">requête</span> imposé par votre texte</span><span><span class="tag model">cGAN</span> proposé par le modèle</span></div>
-    </section>
-    <section>
-      <h2>Graphe de distribution</h2>
-      <p class="sub">Comment les pièces annexes sont desservies.</p>
-      <ul class="topo" id="topo"></ul>
-    </section>
-    <section>
-      <h2>Contrôle du plan</h2>
-      <p class="sub">Vérifications automatiques sur la variante affichée.</p>
-      <dl class="metrics" id="metrics"></dl>
-    </section>
-  </div>
+      <article class="drawing" aria-live="polite">
+        <div class="drawing-bar">
+          <span class="q" id="q"></span>
+          <span class="meta" id="meta"></span>
+        </div>
+        <div class="plan-zone" id="plan"></div>
+        <div class="variants" id="variants"></div>
+      </article>
+    </div>
 
-  <section class="feedback" aria-labelledby="fb-title">
-    <div class="panel">
-      <div>
-        <h2 id="fb-title">Retours</h2>
-        <p class="hint" id="fb-intro">Un plan vous semble juste, ou au contraire étrange ? Dites-le : chaque retour aide à améliorer le modèle.</p>
+    <div class="lower">
+      <section class="schedule">
+        <h2>Tableau des surfaces</h2>
+        <table>
+          <thead><tr><th>Pièce</th><th class="num">Surface</th><th class="num">Source</th></tr></thead>
+          <tbody id="prog"></tbody>
+          <tfoot><tr><td>Total</td><td class="num" id="prog-total"></td><td></td></tr></tfoot>
+        </table>
+        <div class="legend"><span><span class="hand by-prompt">demandé</span> : écrit dans le programme</span><span><span class="hand by-model">ajouté</span> : proposé par le cGAN</span></div>
+      </section>
+      <section class="scheme">
+        <h2>Schéma de distribution</h2>
+        <div id="topo"></div>
+        <div class="legend"><span>trait plein : porte réalisée</span><span><span style="color:var(--red)">tirets</span> : liaison non réalisée</span><span><span style="color:var(--red)">●</span> entrée</span></div>
+      </section>
+      <section class="checks">
+        <h2>Visas</h2>
+        <ul class="visas" id="metrics"></ul>
+      </section>
+    </div>
+
+    <div class="cartouche" aria-label="Cartouche">
+      <div class="title"><span class="k">Projet</span><span class="v">ArchiGAN-SL</span></div>
+      <div class="half"><span class="k">Planche</span><span class="v" id="c-sheet">A-101</span></div>
+      <div class="half"><span class="k">Échelle</span><span class="v">graphique</span></div>
+      <div class="wide"><span class="k">Programme</span><span class="v hand" id="c-prompt"></span></div>
+      <div class="half"><span class="k">Surface</span><span class="v" id="c-area"></span></div>
+      <div class="half"><span class="k">Dessiné par</span><span class="v">cGAN + placement v3</span></div>
+      <div class="half"><span class="k">Date</span><span class="v" id="c-date"></span></div>
+      <div class="wide"><span class="k">Auteur</span><span class="v">Kenny Tshibangu Ntumba · Université Nouveaux Horizons, Lubumbashi</span></div>
+    </div>
+
+    <section class="observe" aria-labelledby="obs-title">
+      <div class="intro">
+        <h2 id="obs-title">Observations</h2>
+        <p>Un plan vous paraît juste, ou au contraire bizarre&nbsp;? Notez-le ici. Votre message est envoyé directement à l'auteur, avec le programme et la variante que vous regardez.</p>
+        <p class="redline">ex.&nbsp;: « la salle d'eau devrait être plus près des chambres »</p>
       </div>
-      <form class="fb-form" id="fb-form" autocomplete="off">
-        <fieldset class="fb-types">
-          <legend class="eyebrow">Type de retour</legend>
-          <label><input type="radio" name="fbtype" value="reussi" id="fb-t1"><span>Plan réussi</span></label>
-          <label><input type="radio" name="fbtype" value="a_revoir" id="fb-t2"><span>Plan à revoir</span></label>
-          <label><input type="radio" name="fbtype" value="remarque" id="fb-t3" checked><span>Remarque</span></label>
+      <form class="obs" id="obs-form" autocomplete="on">
+        <fieldset class="obs-types">
+          <legend class="field-label">Votre avis</legend>
+          <label><input type="radio" name="obs-type" value="Plan réussi" id="obs-t1"> Plan réussi</label>
+          <label><input type="radio" name="obs-type" value="Plan à revoir" id="obs-t2"> Plan à revoir</label>
+          <label><input type="radio" name="obs-type" value="Remarque" id="obs-t3" checked> Remarque</label>
         </fieldset>
         <div>
-          <label class="eyebrow" for="fb-text">Votre retour</label>
-          <textarea id="fb-text" maxlength="2000" placeholder="Ex. : la salle d'eau devrait être plus proche des chambres."></textarea>
+          <label class="field-label" for="obs-text">Observation</label>
+          <textarea id="obs-text" maxlength="3000"></textarea>
         </div>
-        <label class="fb-attach" for="fb-attach"><input type="checkbox" id="fb-attach" checked><span>Joindre la requête et le plan affichés</span></label>
-        <button class="go" type="submit" id="fb-send">Envoyer le retour</button>
-        <p class="fb-status" id="fb-status" role="status"></p>
+        <div class="two">
+          <div><label class="field-label" for="obs-name">Nom <span class="small">(facultatif)</span></label><input type="text" id="obs-name" autocomplete="name"></div>
+          <div><label class="field-label" for="obs-mail">E-mail <span class="small">(pour une réponse)</span></label><input type="email" id="obs-mail" autocomplete="email"></div>
+        </div>
+        <label class="attach" for="obs-attach"><input type="checkbox" id="obs-attach" checked><span>Joindre le programme et la variante affichée</span></label>
+        <div class="hp" aria-hidden="true"><label for="obs-hp">Ne pas remplir</label><input type="text" id="obs-hp" tabindex="-1" autocomplete="off"></div>
+        <div class="row">
+          <button class="btn" type="submit" id="obs-send">Envoyer</button>
+          <p class="obs-status" id="obs-status" role="status"></p>
+        </div>
       </form>
-    </div>
-    <div class="fb-list" id="fb-list"><p class="fb-empty">Chargement des retours…</p></div>
-  </section>
+    </section>
 
-  <footer class="about">
-    <p><strong>Prototype de recherche.</strong> Kenny Tshibangu Ntumba, Université Nouveaux Horizons (Lubumbashi). Le modèle a été entraîné sur des programmes de logements générés et validés par l'algorithme de placement, et non sur des plans réels : les résultats sont des esquisses de principe, pas des plans d'exécution.</p>
-    <p>La requête comprend les typologies (studio, T1 à T6), les pièces (séjour, chambres, salle d'eau, WC, bureau, cuisine, balcon, dressing, couloir), les nombres, « sans … », une surface (« de 65 m² ») et des structures : suite parentale, cuisine fermée ou ouverte, WC séparés, WC dans la salle de bain, chambre avec dressing, coin bureau. Échelle : 1 cellule = 30 cm.</p>
-  </footer>
+    <footer class="notice">
+      <p><b>Notice.</b> Prototype de recherche. Le modèle a été entraîné sur des programmes de logements générés et vérifiés par l'algorithme de placement, et non sur des plans réels : ces dessins sont des esquisses de principe, pas des plans d'exécution.</p>
+      <p><b>Le programme comprend</b> les typologies (studio, T1 à T6), les pièces (séjour, chambres, salle d'eau, WC, bureau, cuisine, balcon, dressing, couloir), les nombres, « sans … », une surface (« de 65 m² ») et des dispositions : suite parentale, cuisine fermée ou ouverte, WC séparés, WC dans la salle de bain, chambre avec dressing, coin bureau.</p>
+    </footer>
+  </div>
 </div>
 
 <script>
@@ -248,84 +328,128 @@ footer.about strong { color: var(--ink); font-weight: 600; }
 </script>
 <script>
 const MODEL = /*__MODEL__*/;
+// Clé publique Web3Forms (https://web3forms.com) : elle identifie le formulaire ;
+// l'adresse de réception reste chez Web3Forms et n'apparaît pas dans la page.
+const WEB3FORMS_KEY = "__WEB3FORMS_KEY__";
 (function () {
   const A = ArchiGAN;
   const EXAMPLES = ["T3 avec balcon", "T4 avec suite parentale et cuisine fermée", "studio de 30 m²",
     "T2 avec wc séparés et coin bureau", "T3 de 65 m² avec chambre avec dressing", "appart 5 chambres sans balcon"];
   const ROOM_FR = { salon: "Séjour", chambre: "Chambre", douche: "Salle d'eau", toilettes: "WC",
     couloir: "Couloir", bureau: "Bureau", cuisine: "Cuisine", balcon: "Balcon", dressing: "Dressing" };
-  const TOPO_FR = {
-    sdb_suite: ["Salle d'eau en suite", "attachée à une chambre"],
-    wc_dans_sdb: ["WC dans la salle d'eau", "sinon sur la circulation"],
-    dressing_suite: ["Dressing attenant", "ouvert sur une chambre"],
-    balcon_chambre: ["Balcon de chambre", "sinon depuis le séjour"],
-    cuisine_fermee: ["Cuisine fermée", "desservie par le couloir"],
-    bureau_sejour: ["Bureau ouvert", "sur le séjour"],
-  };
+  const SHORT = { salon: "SÉJOUR", chambre: "CH.", douche: "SDB", toilettes: "WC", couloir: "DÉG.",
+    bureau: "BUR.", cuisine: "CUIS.", balcon: "BALC.", dressing: "DRES." };
+  const TOPO_FR = { sdb_suite: "Salle d'eau en suite", wc_dans_sdb: "WC dans la salle d'eau",
+    dressing_suite: "Dressing attenant à une chambre", balcon_chambre: "Balcon depuis une chambre",
+    cuisine_fermee: "Cuisine fermée (sur le couloir)", bureau_sejour: "Bureau ouvert sur le séjour" };
+  const LETTERS = "ABCDEF";
   const $ = (id) => document.getElementById(id);
   const fmt = (x, d = 1) => x.toFixed(d).replace(".", ",");
-  let state = null, current = 0;
+  const esc = (t) => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  let state = null, current = 0, sheetNo = 100;
 
-  $("examples").innerHTML = EXAMPLES.map(e => `<button type="button" class="chip">${e}</button>`).join("");
+  $("examples").innerHTML = EXAMPLES.map((e, i) =>
+    `<li><button type="button" data-p="${esc(e)}"><span>${String(i + 1).padStart(2, "0")}</span><span>${esc(e)}</span></button></li>`).join("");
   $("examples").addEventListener("click", (ev) => {
-    const b = ev.target.closest(".chip"); if (!b) return;
-    $("prompt").value = b.textContent; run();
+    const b = ev.target.closest("button[data-p]"); if (!b) return;
+    $("prompt").value = b.dataset.p; run();
+    if (window.matchMedia("(max-width: 900px)").matches) $("plan").scrollIntoView({ behavior: "smooth", block: "start" });
   });
-  $("form").addEventListener("submit", (ev) => { ev.preventDefault(); run(); });
+  $("form").addEventListener("submit", (ev) => {
+    ev.preventDefault(); run();
+    if (window.matchMedia("(max-width: 900px)").matches) $("plan").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
   $("prompt").addEventListener("keydown", (ev) => {
     if (ev.key === "Enter" && (ev.metaKey || ev.ctrlKey)) { ev.preventDefault(); run(); }
   });
+  $("c-date").textContent = new Date().toLocaleDateString("fr-FR");
 
   function run() {
     const prompt = $("prompt").value.trim() || "T3";
-    const seed = Math.floor(Math.random() * 1e9);
-    state = A.planFromPrompt(MODEL, prompt, { n: parseInt($("n").value, 10), seed });
-    current = 0; render();
+    state = A.planFromPrompt(MODEL, prompt, { n: parseInt($("n").value, 10), seed: Math.floor(Math.random() * 1e9) });
+    current = 0; sheetNo++; render();
+  }
+
+  // Schéma de distribution : l'arbre des pièces (graphe de bulles), dessiné par niveaux
+  function schemeSVG(r) {
+    const rooms = r.placed, byUid = Object.fromEntries(rooms.map(x => [x.uid, x]));
+    const depth = {};
+    const d = (u) => depth[u] ?? (depth[u] = byUid[u].graphParent && byUid[u].graphParent in byUid ? d(byUid[u].graphParent) + 1 : 0);
+    rooms.forEach(x => d(x.uid));
+    const levels = []; rooms.forEach(x => (levels[depth[x.uid]] = levels[depth[x.uid]] || []).push(x));
+    const pos = {}, W = 300, rowH = 52, R = 17;
+    levels.forEach((lv, li) => {
+      if (li > 0) lv.sort((a, b) => (pos[a.graphParent]?.x ?? 0) - (pos[b.graphParent]?.x ?? 0));
+      lv.forEach((x, i) => pos[x.uid] = { x: (i + 0.5) * W / lv.length, y: 22 + li * rowH });
+    });
+    const H = 22 + (levels.length - 1) * rowH + 26;
+    const doorSet = new Set(r.doors.map(dd => dd.rooms.slice().sort().join("|")));
+    const entry = r.doors.find(dd => dd.kind === "entree");
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Schéma de distribution">`;
+    for (const x of rooms) if (x.graphParent && pos[x.graphParent]) {
+      const a = pos[x.graphParent], b = pos[x.uid], ok = doorSet.has([x.uid, x.graphParent].sort().join("|"));
+      s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" class="edge${ok ? "" : " missing"}"/>`;
+    }
+    for (const x of rooms) {
+      const p = pos[x.uid], circ = x.name === "salon" || x.name === "couloir";
+      s += `<circle cx="${p.x}" cy="${p.y}" r="${R}" class="node${circ ? " circ" : ""}"/>` +
+           `<text x="${p.x}" y="${p.y + 3.6}" text-anchor="middle" class="node-t">${SHORT[x.name] || x.name}</text>`;
+      if (entry && entry.rooms[0] === x.uid) s += `<circle cx="${p.x + R - 3}" cy="${p.y - R + 3}" r="4.5" class="entry-dot"/>`;
+    }
+    return s + "</svg>";
   }
 
   function render() {
     const r = state.results[current], m = r.metrics, cons = state.cons;
     $("q").textContent = "« " + state.prompt + " »";
-    $("meta").textContent = `${fmt(m.surface, 0)} m² · ${m.nbPieces} pièces · ${fmt(state.tTotal, 1)} ms`;
+    $("meta").textContent = `Variante ${LETTERS[current]} · ${fmt(m.surface, 1)} m² · ${m.nbPieces} pièces · ${fmt(state.tTotal, 0)} ms`;
     $("plan").innerHTML = A.renderSVG(r);
     $("variants").innerHTML = state.results.length > 1 ? state.results.map((x, i) =>
-      `<button type="button" aria-pressed="${i === current}" data-i="${i}">Variante ${i + 1} · ${fmt(x.metrics.surface, 0)} m²</button>`).join("") : "";
+      `<button type="button" aria-pressed="${i === current}" data-i="${i}">${LETTERS[i]} · ${fmt(x.metrics.surface, 0)} m²</button>`).join("") : "";
 
-    const rows = A.GENERATIVE_ROOMS.map((name, i) => {
-      const n = r.pieces[name] || 0, given = cons[i] >= 0;
-      if (!n && !given) return "";
-      return `<tr><td>${ROOM_FR[name]}</td><td class="n">${n}</td><td class="src">${given
-        ? '<span class="tag given">requête</span>' : '<span class="tag model">cGAN</span>'}</td></tr>`;
+    const order = A.GENERATIVE_ROOMS;
+    const rows = r.placed.slice().sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
+    const count = {};
+    $("prog").innerHTML = rows.map(x => {
+      count[x.name] = (count[x.name] || 0) + 1;
+      const total = r.pieces[x.name] || 0, given = cons[order.indexOf(x.name)] >= 0;
+      const label = ROOM_FR[x.name] + (total > 1 ? " " + count[x.name] : "");
+      return `<tr><td>${label}</td><td class="num">${fmt(x.pos[2] * x.pos[3] * 0.09, 1)} m²</td>` +
+             `<td class="src ${given ? "by-prompt" : "by-model"}">${given ? "demandé" : "ajouté"}</td></tr>`;
     }).join("");
-    $("prog").innerHTML = rows;
+    $("prog-total").textContent = fmt(m.surface, 1) + " m²";
 
-    $("topo").innerHTML = A.TOPO_NAMES.map((k, i) => {
-      const v = r.topo[k], got = m.topoObtenue[k], given = cons[A.GENERATIVE_ROOMS.length + i] >= 0;
-      const [label, hint] = TOPO_FR[k];
-      const src = given ? '<span class="tag given">requête</span>' : (v ? '<span class="tag model">cGAN</span>' : "");
-      return `<li class="${v ? "" : "off"}"><span>${label} <small style="color:var(--muted)">· ${hint}</small></span>` +
-             `<span>${v ? "oui" + (v > 1 ? " ×" + v : "") : "non"}${got !== v ? ' <span class="bad">(non réalisé)</span>' : ""} ${src}</span></li>`;
+    const topoRows = A.TOPO_NAMES.filter(k => r.topo[k]).map(k => {
+      const given = cons[order.length + A.TOPO_NAMES.indexOf(k)] >= 0, ok = m.topoObtenue[k] === r.topo[k];
+      return `<li><span>${TOPO_FR[k]}</span><b class="hand ${given ? "by-prompt" : "by-model"}" style="font-family:var(--hand);font-weight:400">${given ? "demandé" : "ajouté"}${ok ? "" : " · non réalisé"}</b></li>`;
     }).join("");
+    $("topo").innerHTML = schemeSVG(r) + (topoRows ? `<ul class="visas" style="margin-top:8px">${topoRows}</ul>` : "");
 
-    const yes = (b) => b ? '<span class="good">oui</span>' : '<span class="bad">non</span>';
+    const stamp = (ok, yes = "conforme", no = "à revoir") => `<span class="stamp ${ok ? "ok" : "ko"}">${ok ? yes : no}</span>`;
     $("metrics").innerHTML = [
-      ["Surface habitable", fmt(m.surface, 1) + " m²" + (state.footprint.surface ? ` <small>(demandé ${fmt(state.footprint.surface, 0)})</small>` : "")],
-      ["Toutes les pièces accessibles", yes(m.connexe)],
-      ["Accès sans traverser une chambre", fmt(m.accesDirect * 100, 0) + " %"],
-      ["Portes interdites", m.portesInterdites ? `<span class="bad">${m.portesInterdites}</span>` : '<span class="good">0</span>'],
+      ["Toutes les pièces sont accessibles", stamp(m.connexe)],
+      ["Aucune chambre ni salle d'eau traversée", stamp(m.accesDirect >= 0.999)],
+      ["Aucune porte interdite (WC sur cuisine…)", stamp(m.portesInterdites === 0)],
+      ["Porte d'entrée", stamp(m.entree, "présente", "absente")],
       ["Portes par pièce privée", fmt(m.portesPiecePrivee, 2)],
-      ["Porte d'entrée", yes(m.entree)],
       ["Compacité de l'emprise", fmt(m.compacite, 2)],
-    ].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+      ["Surface", fmt(m.surface, 1) + " m²" + (state.footprint.surface ? ` (demandé ${fmt(state.footprint.surface, 0)})` : "")],
+    ].map(([k, v]) => `<li><span>${k}</span><b>${v}</b></li>`).join("");
+
+    $("c-sheet").textContent = "A-" + sheetNo + LETTERS[current];
+    $("c-prompt").textContent = state.prompt;
+    $("c-area").textContent = fmt(m.surface, 1) + " m²";
   }
 
   window.__currentPlan = () => {
     if (!state) return null;
     const r = state.results[current];
-    const prog = A.GENERATIVE_ROOMS.filter(n => r.pieces[n]).map(n => `${ROOM_FR[n]} ${r.pieces[n]}`).join(", ");
-    const topo = A.TOPO_NAMES.filter(k => r.topo[k]).map(k => TOPO_FR[k][0]).join(", ");
-    return { requete: state.prompt, variante: current + 1, programme: prog, graphe: topo,
-             surface: Math.round(r.metrics.surface) };
+    return {
+      programme: state.prompt, planche: "A-" + sheetNo + LETTERS[current],
+      surface: fmt(r.metrics.surface, 1) + " m²",
+      pieces: A.GENERATIVE_ROOMS.filter(n => r.pieces[n]).map(n => `${ROOM_FR[n]} ${r.pieces[n]}`).join(", "),
+      distribution: A.TOPO_NAMES.filter(k => r.topo[k]).map(k => TOPO_FR[k]).join(", ") || "standard",
+    };
   };
 
   $("variants").addEventListener("click", (ev) => {
@@ -336,87 +460,39 @@ const MODEL = /*__MODEL__*/;
 })();
 </script>
 <script>
-(async function () {
+// Observations : envoi par e-mail via Web3Forms
+(function () {
   const $ = (id) => document.getElementById(id);
-  const list = $("fb-list"), form = $("fb-form"), status = $("fb-status");
-  const TYPES = { reussi: ["Plan réussi", "t-ok"], a_revoir: ["Plan à revoir", "t-bad"], remarque: ["Remarque", "t-note"] };
-  const say = (msg, cls) => { status.textContent = msg; status.className = "fb-status " + (cls || ""); };
-  const empty = (msg) => { list.innerHTML = ""; const p = document.createElement("p"); p.className = "fb-empty"; p.textContent = msg; list.append(p); };
-  const setFormEnabled = (on) => { for (const el of form.elements) el.disabled = !on; };
-
-  const db = window.claude ? await window.claude.use("db") : null;
-  const user = window.claude ? await window.claude.use("user") : null;
-  if (!db) {
-    setFormEnabled(false);
-    empty("Les retours sont visibles une fois connecté à claude.ai.");
-    say("Connectez-vous à claude.ai pour laisser un retour.");
-    return;
-  }
-  const myId = user ? await user.id() : null;
-  const canWrite = user ? await user.can("data.write") : null;
-  if (canWrite === false) {
-    setFormEnabled(false);
-    say("Vous pouvez lire les retours. Pour en laisser, demandez un accès « Contributeur » au propriétaire.");
-  }
-
-  const col = db.collection("retours");
-  let blocked = false;
-  let docs = [];
-  async function draw() {
-    if (!docs.length) { empty("Aucun retour pour l'instant. Soyez le premier à en laisser un."); return; }
-    const ids = [...new Set(docs.map(d => d.data().auteur).filter(Boolean))];
-    const people = user && ids.length ? await user.profiles(ids) : {};
-    list.innerHTML = "";
-    for (const d of docs) {
-      const v = d.data(), item = document.createElement("article"); item.className = "fb-item";
-      const head = document.createElement("div"); head.className = "fb-head";
-      const who = document.createElement("span"); who.className = "who";
-      who.textContent = (v.auteur && people[v.auteur] && people[v.auteur].name) || "Un visiteur";
-      const when = document.createElement("time");
-      const dt = new Date(v.cree || 0); when.dateTime = dt.toISOString();
-      when.textContent = dt.toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) + " à " +
-                         dt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-      const [tl, tc] = TYPES[v.type] || TYPES.remarque;
-      const tag = document.createElement("span"); tag.className = "tag " + tc; tag.textContent = tl;
-      head.append(who, when, tag);
-      if (myId && v.auteur === myId) {
-        const del = document.createElement("button"); del.type = "button"; del.className = "del"; del.textContent = "Supprimer";
-        del.addEventListener("click", async () => {
-          del.disabled = true;
-          try { await col.doc(d.id).delete(); } catch (e) { del.disabled = false; say("Suppression impossible pour le moment.", "err"); }
-        });
-        head.append(del);
-      }
-      const text = document.createElement("p"); text.className = "fb-text"; text.textContent = v.texte || "";
-      item.append(head, text);
-      if (v.contexte && v.contexte.requete) {
-        const c = v.contexte, ctx = document.createElement("div"); ctx.className = "fb-ctx";
-        ctx.textContent = `« ${c.requete} » · variante ${c.variante} · ${c.surface} m² · ${c.programme}` + (c.graphe ? ` · ${c.graphe}` : "");
-        item.append(ctx);
-      }
-      list.append(item);
-    }
-  }
-  col.orderBy("cree", "desc").limit(100).onSnapshot(
-    (snap) => { docs = snap.docs; draw(); },
-    () => { empty("Les retours ne peuvent pas être chargés pour le moment."); });
-
+  const form = $("obs-form"), status = $("obs-status"), send = $("obs-send");
+  const say = (msg, cls) => { status.textContent = msg; status.className = "obs-status " + (cls || ""); };
+  const configured = /^[0-9a-f-]{36}$/i.test(WEB3FORMS_KEY);
+  if (!configured) { send.disabled = true; say("L'envoi n'est pas encore activé sur cette version de la page.", "err"); }
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
-    const texte = $("fb-text").value.trim();
-    if (!texte) { say("Écrivez quelques mots avant d'envoyer.", "err"); $("fb-text").focus(); return; }
-    const type = (form.querySelector("input[name=fbtype]:checked") || {}).value || "remarque";
-    const body = { texte: texte.slice(0, 2000), type, auteur: myId, cree: Date.now() };
-    if ($("fb-attach").checked && window.__currentPlan) body.contexte = window.__currentPlan();
-    $("fb-send").disabled = true; say("Envoi…");
+    if (!configured || $("obs-hp").value) return;
+    const texte = $("obs-text").value.trim();
+    if (!texte) { say("Écrivez votre observation avant d'envoyer.", "err"); $("obs-text").focus(); return; }
+    const mail = $("obs-mail").value.trim();
+    if (mail && !$("obs-mail").checkValidity()) { say("L'adresse e-mail semble incomplète.", "err"); $("obs-mail").focus(); return; }
+    const type = (form.querySelector("input[name=obs-type]:checked") || {}).value || "Remarque";
+    const payload = { access_key: WEB3FORMS_KEY, subject: `ArchiGAN-SL · ${type}`,
+                      from_name: $("obs-name").value.trim() || "Visiteur ArchiGAN-SL", "Avis": type, "Observation": texte };
+    if (mail) payload.email = mail;
+    if ($("obs-attach").checked && window.__currentPlan) {
+      const c = window.__currentPlan();
+      if (c) Object.assign(payload, { "Programme": c.programme, "Planche": c.planche, "Surface": c.surface,
+                                      "Pièces": c.pieces, "Distribution": c.distribution });
+    }
+    send.disabled = true; say("Envoi…");
     try {
-      await col.add(body);
-      $("fb-text").value = ""; say("Merci, votre retour est enregistré.", "okmsg");
-    } catch (e) {
-      if (e && e.code === "invalid_argument") { blocked = true; setFormEnabled(false); say("Votre accès ne permet pas de laisser un retour. Demandez un accès « Contributeur » au propriétaire.", "err"); }
-      else if (e && e.code === "quota_exceeded") say("La zone de retours est pleine. Prévenez le propriétaire de la page.", "err");
+      const res = await fetch("https://api.web3forms.com/submit", { method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(payload) });
+      const out = await res.json().catch(() => ({}));
+      if (res.ok && out.success) { $("obs-text").value = ""; say("Merci, votre observation a bien été envoyée.", "sent"); }
       else say("L'envoi a échoué. Réessayez dans un instant.", "err");
-    } finally { if (canWrite !== false && !blocked) $("fb-send").disabled = false; }
+    } catch (e) {
+      say("Impossible de joindre le service d'envoi. Vérifiez votre connexion et réessayez.", "err");
+    } finally { send.disabled = false; }
   });
 })();
 </script>

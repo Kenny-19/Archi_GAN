@@ -614,7 +614,8 @@ function renderSVG(res) {
   const isRoom = (c, r) => r >= 0 && r < gs && c >= 0 && c < gs && grid[r][c] !== null;
   const xs = placed.flatMap(r => [r.pos[0], r.pos[0] + r.pos[2]]);
   const ys = placed.flatMap(r => [r.pos[1], r.pos[1] + r.pos[3]]);
-  const m = 4, x0 = Math.min(...xs) - m, x1 = Math.max(...xs) + m, y0 = Math.min(...ys) - m, y1 = Math.max(...ys) + m;
+  const bx0 = Math.min(...xs), bx1 = Math.max(...xs), by0 = Math.min(...ys), by1 = Math.max(...ys);
+  const x0 = bx0 - 7, x1 = bx1 + 3, y0 = by0 - 7, y1 = by1 + 8;
   const f = (v) => +v.toFixed(2);
   const P = [];
   P.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x0} ${y0} ${x1 - x0} ${y1 - y0}" class="plan-svg" role="img" aria-label="Plan généré">`);
@@ -673,6 +674,27 @@ function renderSVG(res) {
     P.push(`<g${tr} text-anchor="middle"><text x="${cx}" y="${f(cy + (big ? -0.2 : 0.35))}" class="label" font-size="${f(fs)}">${label}</text>` +
       (big ? `<text x="${cx}" y="${f(cy + 1.35)}" class="area" font-size="${f(fs * 0.72)}">${area} m²</text>` : "") + `</g>`);
   }
+  // cotes d'ensemble (en metres, 1 cellule = 30 cm)
+  const mtxt = (cells) => (cells * 0.3).toFixed(2).replace(".", ",");
+  const tick = (x, y) => P.push(`<line x1="${f(x - 0.6)}" y1="${f(y + 0.6)}" x2="${f(x + 0.6)}" y2="${f(y - 0.6)}" class="dim" stroke-width="0.12"/>`);
+  const dy = by0 - 3.2, dx = bx0 - 3.2;
+  P.push(`<line x1="${bx0}" y1="${dy}" x2="${bx1}" y2="${dy}" class="dim" stroke-width="0.07"/>`);
+  P.push(`<line x1="${bx0}" y1="${by0 - 0.8}" x2="${bx0}" y2="${dy - 0.8}" class="dim" stroke-width="0.05"/>`);
+  P.push(`<line x1="${bx1}" y1="${by0 - 0.8}" x2="${bx1}" y2="${dy - 0.8}" class="dim" stroke-width="0.05"/>`);
+  tick(bx0, dy); tick(bx1, dy);
+  P.push(`<text x="${f((bx0 + bx1) / 2)}" y="${f(dy - 0.7)}" class="dim-text" font-size="1.25" text-anchor="middle">${mtxt(bx1 - bx0)}</text>`);
+  P.push(`<line x1="${dx}" y1="${by0}" x2="${dx}" y2="${by1}" class="dim" stroke-width="0.07"/>`);
+  P.push(`<line x1="${bx0 - 0.8}" y1="${by0}" x2="${dx - 0.8}" y2="${by0}" class="dim" stroke-width="0.05"/>`);
+  P.push(`<line x1="${bx0 - 0.8}" y1="${by1}" x2="${dx - 0.8}" y2="${by1}" class="dim" stroke-width="0.05"/>`);
+  tick(dx, by0); tick(dx, by1);
+  const cyd = (by0 + by1) / 2;
+  P.push(`<text x="${f(dx - 0.7)}" y="${f(cyd)}" class="dim-text" font-size="1.25" text-anchor="middle" transform="rotate(-90 ${f(dx - 0.7)} ${f(cyd)})">${mtxt(by1 - by0)}</text>`);
+  // echelle graphique 0-1-2-5 m
+  const sy = by1 + 4.2, sx = bx0, u = 1 / 0.3;
+  [[0, 1], [1, 2], [2, 5]].forEach(([a, b], i) =>
+    P.push(`<rect x="${f(sx + a * u)}" y="${sy}" width="${f((b - a) * u)}" height="0.7" class="${i % 2 ? "scale-b" : "scale-a"}" stroke-width="0.08"/>`));
+  [0, 1, 2, 5].forEach(v => P.push(`<text x="${f(sx + v * u)}" y="${f(sy + 2.2)}" class="dim-text" font-size="1.05" text-anchor="middle">${v}</text>`));
+  P.push(`<text x="${f(sx + 5 * u + 1)}" y="${f(sy + 0.7)}" class="dim-text" font-size="1.05">m</text>`);
   P.push(`</svg>`);
   return P.join("");
 }
