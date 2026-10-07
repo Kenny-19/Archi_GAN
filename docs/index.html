@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Esquisses de logements 2D dessinées à partir d'une phrase, par un GAN conditionnel et un algorithme de placement.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f3ecc8'/%3E%3Cpath d='M5 5h22v22H5zM5 16h12V5M17 16v11' fill='none' stroke='%2326231c' stroke-width='2.5'/%3E%3C/svg%3E">
-<meta name="version" content="2026-10-07 10:54">
+<meta name="version" content="2026-10-07 15:49">
 <title>ArchiGAN-SL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,6 +62,22 @@ h1, h2, h3 { font-family: var(--display); font-weight: 700; letter-spacing: 0.01
 .head h1 { font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: 0.95; text-transform: uppercase; }
 .head h1 small { display: block; font-size: max(0.36em, 1rem); font-weight: 500; letter-spacing: 0.03em; color: var(--ink-soft); margin-top: 8px; text-transform: none; }
 .head .note { font-family: var(--hand); color: var(--red); font-size: 1.05rem; transform: rotate(-2deg); max-width: 24ch; line-height: 1.25; margin: 0; }
+
+/* mode d'emploi */
+.howto { display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); border: 1.5px solid var(--ink); }
+.howto-title, .howto li { padding: 14px 16px; border-right: 1px solid var(--ink); min-width: 0; margin: 0; }
+.howto li:last-child { border-right: 0; }
+.howto .howto-title { display: grid; align-content: center; background: var(--ink); color: var(--paper);
+  font-family: var(--display); font-weight: 700; font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.1; }
+.howto ol { display: contents; }
+.howto li { list-style: none; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-content: start; }
+.howto .n { font-family: var(--display); font-weight: 700; font-size: 2rem; line-height: 0.9; color: var(--red); grid-row: span 2; }
+.howto strong { font-family: var(--display); font-weight: 700; font-size: 1.08rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.howto p { margin: 0; font-size: 0.92rem; color: var(--ink-soft); }
+.howto em { font-family: var(--hand); font-style: normal; color: var(--ink); }
+.tips { margin: 6px 0 0; padding: 8px 10px; border: 1px dashed var(--line); font-size: 0.86rem; color: var(--ink-soft); }
+.tips b { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink); }
+.tips code { font-family: var(--hand); font-size: 0.95rem; color: var(--ink); background: none; white-space: nowrap; }
 
 /* zone de travail */
 .work { display: grid; grid-template-columns: minmax(260px, 330px) minmax(0, 1fr); border: 1.5px solid var(--ink); }
@@ -193,6 +209,11 @@ footer.notice b { color: var(--ink); font-family: var(--display); text-transform
   .observe { grid-template-columns: minmax(0, 1fr); }
   .observe .intro { border-right: 0; border-bottom: 1.5px solid var(--ink); }
 }
+@media (max-width: 1000px) {
+  .howto { grid-template-columns: minmax(0, 1fr); }
+  .howto-title, .howto li { border-right: 0; border-bottom: 1px solid var(--ink); }
+  .howto li:last-child { border-bottom: 0; }
+}
 /* ---- téléphone ---- */
 @media (max-width: 680px) {
   body { font-size: 15px; background-size: 12px 12px; }
@@ -235,11 +256,24 @@ footer.notice b { color: var(--ink); font-family: var(--display); text-transform
       <p class="note">version d'essai : vos remarques sont les bienvenues, en bas de la planche</p>
     </header>
 
+    <section class="howto" aria-label="Mode d'emploi">
+      <h2 class="howto-title">Mode<br>d'emploi</h2>
+      <ol>
+        <li><span class="n">1</span><strong>Décrivez le logement</strong>
+          <p>Dans le cadre « Le programme », écrivez en français ce que vous voulez, par exemple <em>T3 avec balcon</em> ou <em>2 chambres, cuisine fermée, 70 m²</em>. Ou choisissez une esquisse rapide.</p></li>
+        <li><span class="n">2</span><strong>Cliquez sur « Dessiner »</strong>
+          <p>Le plan apparaît en une fraction de seconde. Chaque clic propose de nouvelles variantes ; passez de l'une à l'autre avec les onglets A, B, C sous le plan.</p></li>
+        <li><span class="n">3</span><strong>Lisez et donnez votre avis</strong>
+          <p>Sous le plan : la surface de chaque pièce, l'organisation des pièces et les contrôles. En bas de page, envoyez une observation à l'auteur.</p></li>
+      </ol>
+    </section>
+
     <div class="work">
       <form class="brief" id="form" autocomplete="off">
         <div>
           <label class="field-label" for="prompt">Le programme</label>
           <textarea id="prompt" name="prompt" spellcheck="false">T3 avec balcon et suite parentale</textarea>
+          <div class="tips"><b>Ce que vous pouvez écrire</b> : une typologie (<code>studio</code>, <code>T2</code> … <code>T6</code>), des pièces et leur nombre (<code>3 chambres</code>, <code>2 salles de bain</code>, <code>un bureau</code>), une absence (<code>sans balcon</code>), une surface (<code>de 65 m²</code>), une disposition (<code>suite parentale</code>, <code>cuisine fermée</code>, <code>WC séparés</code>, <code>chambre avec dressing</code>).</div>
         </div>
         <div>
           <span class="field-label">Esquisses rapides</span>
