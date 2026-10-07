@@ -4,6 +4,8 @@ Génération de plans de logements 2D à partir d'une requête en français, par
 
 > « T4 avec suite parentale et cuisine fermée » → programme des pièces → graphe de distribution → plan
 
+**Démonstration en ligne : https://archigansite.vercel.app**
+
 Projet de recherche de **Kenny Tshibangu Ntumba**, Université Nouveaux Horizons (Lubumbashi), dans le prolongement du mémoire de Master (2025). Version bêta.
 
 ![Plans générés pour quatre requêtes](resultats/figures/fig_exemples_plans.png)
@@ -51,7 +53,7 @@ python web/build_page.py
 
 `check_forward.js` vérifie que la passe avant JavaScript reproduit celle de PyTorch (écart maximal mesuré : 2 × 10⁻⁵).
 
-Le site est déployé sur **Vercel** à partir de ce dépôt : `vercel.json` indique que la page se trouve dans `docs/`, sans étape de construction. Chaque envoi sur `main` redéploie le site automatiquement.
+Le site est déployé sur **Vercel** (https://archigansite.vercel.app) à partir de ce dépôt : `vercel.json` indique que la page se trouve dans `docs/`, sans étape de construction. Chaque envoi sur `main` redéploie le site automatiquement.
 
 La zone « Retours » de la page fonctionne uniquement dans sa version hébergée sur claude.ai. Ouverte ailleurs (localement ou sur Vercel), la page génère les plans normalement et indique que les retours ne sont pas disponibles.
 
