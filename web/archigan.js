@@ -467,6 +467,60 @@ function doorsTree(placed, grid, gs, hasC) {
 }
 
 // ---------------------------------------------------------------------
+// Fenetres : sur les murs exterieurs, centrees sur le plus long troncon
+// libre, avec un trumeau d'au moins 30 cm aux angles. Largeurs en cellules
+// de 30 cm : sejour 1,80 m (et une seconde baie si possible), chambre,
+// bureau et cuisine 1,20 m, salle de bain et WC 60 cm (chassis haut).
+// ---------------------------------------------------------------------
+const WINDOW_SPEC = { salon: [6, 4], chambre: [4, 3], bureau: [4, 3], cuisine: [4, 3],
+                      douche: [2, 2], toilettes: [2, 2] };
+const LIT_ROOMS = new Set(["salon", "chambre", "bureau", "cuisine"]);
+
+function windowsFor(placed, grid, gs, doors) {
+  const inside = (c, r) => c >= 0 && c < gs && r >= 0 && r < gs && grid[r][c] !== null;
+  const entry = doors.find(d => d.kind === "entree");
+  const out = [];
+  for (const r of placed) {
+    const spec = WINDOW_SPEC[r.name]; if (!spec) continue;
+    const [x, y, w, h] = r.pos, runs = [];
+    const sides = [["horizontal", y, x, w, k => [x + k, y - 1]], ["horizontal", y + h, x, w, k => [x + k, y + h]],
+                   ["vertical", x, y, h, k => [x - 1, y + k]], ["vertical", x + w, y, h, k => [x + w, y + k]]];
+    for (const [orient, fixed, start, len, cell] of sides) {
+      let lo = null;
+      for (let k = 0; k <= len; k++) {
+        let free = k < len && !inside(...cell(k));
+        if (free && entry && entry.orientation === orient && entry.rooms[0] === r.uid) {
+          const ef = orient === "vertical" ? entry.pos[0] : entry.pos[1], ea = orient === "vertical" ? entry.pos[1] : entry.pos[0];
+          if (ef === fixed && start + k >= ea - 1 && start + k < ea + entry.size + 1) free = false;
+        }
+        if (free && lo === null) lo = k;
+        if (!free && lo !== null) { runs.push({ orient, fixed, lo: start + lo, len: k - lo }); lo = null; }
+      }
+    }
+    runs.sort((a, b) => b.len - a.len || a.lo - b.lo);
+    const [want, min] = spec, maxN = r.name === "salon" ? 2 : 1;
+    let n = 0;
+    for (const run of runs) {
+      const size = Math.min(want, run.len - 2);
+      if (size < min) break;
+      const along = run.lo + Math.floor((run.len - size) / 2);
+      out.push({ pos: run.orient === "vertical" ? [run.fixed, along] : [along, run.fixed], size,
+                 orientation: run.orient, room: r.uid, high: !LIT_ROOMS.has(r.name) });
+      if (++n >= maxN) break;
+    }
+  }
+  return out;
+}
+// part des pieces de vie qui recoivent le jour (fenetre ou porte-fenetre sur balcon)
+function daylightRatio(placed, doors, windows) {
+  const lit = new Set(windows.map(w => w.room)), names = Object.fromEntries(placed.map(r => [r.uid, r.name]));
+  for (const d of doors) { const [a, b] = d.rooms;
+    if (names[a] === "balcon") lit.add(b); if (names[b] === "balcon") lit.add(a); }
+  const rooms = placed.filter(r => LIT_ROOMS.has(r.name));
+  return rooms.length ? rooms.filter(r => lit.has(r.uid)).length / rooms.length : 1;
+}
+
+// ---------------------------------------------------------------------
 // Metriques
 // ---------------------------------------------------------------------
 function doorGraph(placed, doors) {
@@ -553,12 +607,12 @@ function layout(p, topo, target, rng, tries = 5) {
     const grid = Array.from({ length: gs }, () => new Array(gs).fill(null));
     for (const r of placed) for (let yy = r.pos[1]; yy < r.pos[1] + r.pos[3]; yy++)
       for (let xx = r.pos[0]; xx < r.pos[0] + r.pos[2]; xx++) grid[yy][xx] = r.uid;
-    const doors = doorsTree(placed, grid, gs, hasC);
+    const doors = doorsTree(placed, grid, gs, hasC), windows = windowsFor(placed, grid, gs, doors);
     const score = [Math.min(placed.length, total), isConnected(placed, doors) ? 1 : 0,
                    -forbiddenDoors(placed, doors, hasC), directAccess(placed, doors),
-                   legalDoorRatio(placed, doors), compactness(placed)];
-    if (!best || better(score, bestScore)) { best = { placed, doors, grid, gs }; bestScore = score; }
-    if (score[0] === total && score[1] && score[2] === 0 && score[3] === 1 && score[4] >= 0.9) break;
+                   daylightRatio(placed, doors, windows), legalDoorRatio(placed, doors), compactness(placed)];
+    if (!best || better(score, bestScore)) { best = { placed, doors, windows, grid, gs }; bestScore = score; }
+    if (score[0] === total && score[1] && score[2] === 0 && score[3] === 1 && score[4] === 1 && score[5] >= 0.9) break;
   }
   return best;
 }
@@ -597,6 +651,7 @@ function metricsOf(L, pieces) {
         portesLegales: legalDoorRatio(L.placed, L.doors),
         compacite: compactness(L.placed), connexe: isConnected(L.placed, L.doors),
         topoObtenue: realizedTopology(L.placed, L.doors),
+        fenetres: L.windows.length, eclairement: daylightRatio(L.placed, L.doors, L.windows),
         placement: L.placed.length / total,
         portesPiecePrivee: priv.length ? priv.reduce((s, r) => s + (deg[r.uid] || 0), 0) / priv.length : 0,
   };
@@ -641,11 +696,14 @@ function renderSVG(res) {
     P.push(`<line x1="${f(hinge[0])}" y1="${f(hinge[1])}" x2="${f(leaf[0])}" y2="${f(leaf[1])}" class="leaf ${cls}" stroke-width="0.18"/>`);
     P.push(`<path d="M${f(leaf[0])} ${f(leaf[1])} A${size} ${size} 0 0 ${sweep} ${f(end[0])} ${f(end[1])}" class="swing ${cls}" stroke-width="0.08"/>`);
   };
+  const nameOf = Object.fromEntries(placed.map(r => [r.uid, r.name]));
   for (const d of doors) {
     const [gc, gr] = d.pos, ds = d.size, cls = d.kind === "entree" ? "entry" : "";
+    const glazed = d.rooms.some(u => nameOf[u] === "balcon");   // porte-fenetre
     if (d.orientation === "vertical") {
       const wx = gc, mid = gr + Math.floor(ds / 2);
       P.push(`<rect x="${wx - 0.4}" y="${gr}" width="0.8" height="${ds}" class="gap"/>`);
+      if (glazed) P.push(`<rect x="${wx - 0.3}" y="${gr}" width="0.6" height="${ds}" class="win" stroke-width="0.07"/><line x1="${wx}" y1="${gr}" x2="${wx}" y2="${gr + ds}" class="glass" stroke-width="0.07"/>`);
       const left = isRoom(wx - 1, mid), right = isRoom(wx, mid);
       const openv = left ? [-1, 0] : (right ? [1, 0] : [-1, 0]);
       const oc = openv[0] < 0 ? wx - 1 : wx, downOk = isRoom(oc, gr + ds);
@@ -655,12 +713,24 @@ function renderSVG(res) {
     } else {
       const wy = gr, mid = gc + Math.floor(ds / 2);
       P.push(`<rect x="${gc}" y="${wy - 0.4}" width="${ds}" height="0.8" class="gap"/>`);
+      if (glazed) P.push(`<rect x="${gc}" y="${wy - 0.3}" width="${ds}" height="0.6" class="win" stroke-width="0.07"/><line x1="${gc}" y1="${wy}" x2="${gc + ds}" y2="${wy}" class="glass" stroke-width="0.07"/>`);
       const up = isRoom(mid, wy - 1), down = isRoom(mid, wy);
       const openv = down ? [0, 1] : (up ? [0, -1] : [0, 1]);
       const orow = openv[1] < 0 ? wy - 1 : wy, rightOk = isRoom(gc + ds, orow);
       leafArc(rightOk ? [gc, wy] : [gc + ds, wy], rightOk ? [1, 0] : [-1, 0], openv, ds, cls);
       if (cls) { const out = down ? -1 : 1;
         P.push(`<text x="${f(gc + ds / 2)}" y="${f(wy + out * 1.8)}" class="entry-label" font-size="0.9" text-anchor="middle" dominant-baseline="middle">ENTRÉE</text>`); }
+    }
+  }
+  // fenetres : tableau dans l'epaisseur du mur, deux nus et le vitrage au milieu
+  for (const wd of res.windows || []) {
+    const [a, b] = wd.pos, s = wd.size, t = 0.3, cls = wd.high ? "win high" : "win";
+    if (wd.orientation === "vertical") {
+      P.push(`<rect x="${f(a - t)}" y="${b}" width="${f(2 * t)}" height="${s}" class="${cls}" stroke-width="0.07"/>`);
+      P.push(`<line x1="${a}" y1="${b}" x2="${a}" y2="${b + s}" class="glass" stroke-width="0.07"/>`);
+    } else {
+      P.push(`<rect x="${a}" y="${f(b - t)}" width="${s}" height="${f(2 * t)}" class="${cls}" stroke-width="0.07"/>`);
+      P.push(`<line x1="${a}" y1="${b}" x2="${a + s}" y2="${b}" class="glass" stroke-width="0.07"/>`);
     }
   }
   for (const r of placed) {

@@ -71,6 +71,9 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .plan-svg .room.balcon { fill: var(--balcony); }
 .plan-svg .wall { stroke: var(--wall); stroke-linecap: square; }
 .plan-svg .gap { fill: var(--room); }
+.plan-svg .win { fill: var(--room); stroke: var(--wall); }
+.plan-svg .win.high { stroke-dasharray: .25 .18; }
+.plan-svg .glass { stroke: var(--wall); }
 .plan-svg .leaf, .plan-svg .swing { stroke: var(--wall); fill: none; stroke-opacity: .8; }
 .plan-svg .entry { stroke: var(--accent); stroke-opacity: 1; }
 .plan-svg .entry-label { fill: var(--accent); font-family: var(--font); font-weight: 700; }
@@ -101,7 +104,7 @@ button, input, textarea, select { font: inherit; color: inherit; }
 .details-head { display: flex; align-items: center; gap: 10px; padding: 8px 16px 0; }
 .grabber { width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 8px auto 2px; }
 .details-head h2 { margin: 0; font-size: 1.05rem; margin-right: auto; }
-.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 12px 16px 4px; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 12px 16px 4px; }
 .stat { background: var(--bg); border-radius: 12px; padding: 9px 11px; }
 .stat span { display: block; font-size: 0.75rem; color: var(--muted); }
 .stat b { font-size: 1.12rem; font-variant-numeric: tabular-nums; }
@@ -486,7 +489,7 @@ const SITE_URL = "https://archigansite.vercel.app";
       `<button type="button" aria-pressed="${i === current}" data-i="${i}" aria-label="Variante ${LETTERS[i]}">${LETTERS[i]}</button>`).join("");
     $("summary").innerHTML = `<b>${fmt(m.surface, 0)} m²</b> · ${m.nbPieces} pièces`;
 
-    $("stats").innerHTML = [["Surface", fmt(m.surface, 1) + " m²"], ["Pièces", m.nbPieces], ["Portes", m.portes]]
+    $("stats").innerHTML = [["Surface", fmt(m.surface, 1) + " m²"], ["Pièces", m.nbPieces], ["Portes", m.portes], ["Fenêtres", m.fenetres]]
       .map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join("");
 
     const rows = r.placed.slice().sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name)), count = {};
@@ -510,6 +513,7 @@ const SITE_URL = "https://archigansite.vercel.app";
       ["On ne traverse ni chambre ni salle de bain", ck(m.accesDirect >= 0.999)],
       ["Aucune porte mal placée (WC sur cuisine…)", ck(m.portesInterdites === 0)],
       ["Porte d'entrée", ck(m.entree, "Présente", "Absente")],
+      ["Pièces de vie éclairées (fenêtre ou balcon)", ck(m.eclairement >= 0.999, "Toutes", Math.round(m.eclairement * 100) + " %")],
       ["Surface demandée", `<span>${state.footprint.surface ? fmt(state.footprint.surface, 0) + " m²" : "non précisée"}</span>`],
     ].map(([k, v]) => `<li><span>${k}</span>${v}</li>`).join("");
   }
@@ -522,7 +526,7 @@ const SITE_URL = "https://archigansite.vercel.app";
   $("m-export").onclick = async () => {
     if (!state) return;
     const r = state.results[current];
-    const css = `.room{fill:#fff;stroke:#111}.room.balcon{fill:#eee}.wall{stroke:#111;stroke-linecap:square}.gap{fill:#fff}` +
+    const css = `.room{fill:#fff;stroke:#111}.room.balcon{fill:#eee}.wall{stroke:#111;stroke-linecap:square}.gap{fill:#fff}.win{fill:#fff;stroke:#111}.win.high{stroke-dasharray:.25 .18}.glass{stroke:#111}` +
       `.leaf,.swing{stroke:#111;fill:none}.entry{stroke:#1d6b4f}.entry-label{fill:#1d6b4f;font-family:sans-serif}` +
       `.label{fill:#111;font-family:sans-serif;font-weight:700}.area{fill:#555;font-family:sans-serif}.dim{stroke:#555;fill:none}` +
       `.dim-text{fill:#555;font-family:sans-serif}.scale-a{fill:#111;stroke:#111}.scale-b{fill:#fff;stroke:#111}`;
