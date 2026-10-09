@@ -16,7 +16,7 @@ Projet de recherche de **Kenny Tshibangu Ntumba**, Université Nouveaux Horizons
 1. **Parser.** La requête est convertie en contraintes partielles. Il reconnaît les typologies (studio, T1 à T6), les pièces et leurs synonymes, les nombres, les négations (« sans balcon »), une surface (« de 65 m² ») et des structures (« suite parentale », « cuisine fermée », « WC séparés », « coin bureau »…).
 2. **cGAN.** Un générateur conditionnel complète ce que la requête ne précise pas : le nombre de pièces de chaque type et la topologie du graphe de bulles (6 variables de rattachement).
 3. **Snap.** Les valeurs imposées par la requête sont rétablies telles quelles.
-4. **Placement v3.** Un algorithme place les pièces en suivant le graphe de bulles, puis pose les portes en arbre (une porte par pièce privée, aucune liaison interdite) et une porte d'entrée. La surface demandée est respectée.
+4. **Placement v3.** Un algorithme place les pièces en suivant le graphe de bulles, puis pose les portes en arbre (une porte par pièce privée, aucune liaison interdite) et une porte d'entrée. La surface demandée est respectée. Les fenêtres sont posées sur les murs extérieurs (baies du séjour, fenêtres des chambres, de la cuisine et du bureau, châssis hauts des pièces d'eau) ; parmi les essais de placement, on retient en priorité un plan où toutes les pièces de vie reçoivent le jour.
 5. **Split Learning.** Le cGAN peut être entraîné entre plusieurs agences et un serveur sans que leurs données ne quittent leurs locaux (variantes SL et SplitFed, avec ou sans bruit sur les activations échangées).
 
 ## Contenu du dépôt
