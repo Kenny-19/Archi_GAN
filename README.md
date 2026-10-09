@@ -16,7 +16,7 @@ Projet de recherche de **Kenny Tshibangu Ntumba**, Université Nouveaux Horizons
 1. **Parser.** La requête est convertie en contraintes partielles. Il reconnaît les typologies (studio, T1 à T6), les pièces et leurs synonymes, les nombres, les négations (« sans balcon »), une surface (« de 65 m² ») et des structures (« suite parentale », « cuisine fermée », « WC séparés », « coin bureau »…).
 2. **cGAN.** Un générateur conditionnel complète ce que la requête ne précise pas : le nombre de pièces de chaque type et la topologie du graphe de bulles (6 variables de rattachement).
 3. **Snap.** Les valeurs imposées par la requête sont rétablies telles quelles.
-4. **Placement v3.** Un algorithme place les pièces en suivant le graphe de bulles, puis pose les portes en arbre (une porte par pièce privée, aucune liaison interdite) et une porte d'entrée. La surface demandée est respectée. Les fenêtres sont posées sur les murs extérieurs (baies du séjour, fenêtres des chambres, de la cuisine et du bureau, châssis hauts des pièces d'eau) ; parmi les essais de placement, on retient en priorité un plan où toutes les pièces de vie reçoivent le jour.
+4. **Placement v3.** Un algorithme place les pièces en suivant le graphe de bulles, puis pose les portes en arbre (une porte par pièce privée, aucune liaison interdite) et une porte d'entrée. La surface demandée est respectée. La cuisine reçoit une porte de service quand elle donne sur l'extérieur (« sans porte de service » pour l'éviter). Quand le logement a un couloir, ni le WC ni la salle de bain n'ouvrent sur le séjour. Les fenêtres sont posées sur les murs extérieurs (baies du séjour, fenêtres des chambres, de la cuisine et du bureau, châssis hauts des pièces d'eau) ; parmi les essais de placement, on retient en priorité un plan où toutes les pièces de vie reçoivent le jour.
 5. **Split Learning.** Le cGAN peut être entraîné entre plusieurs agences et un serveur sans que leurs données ne quittent leurs locaux (variantes SL et SplitFed, avec ou sans bruit sur les activations échangées).
 
 ## Contenu du dépôt
@@ -53,6 +53,7 @@ plan("T3 avec balcon et suite parentale", n=3)
 | Plan, au centre | Plan coté en grand ; zoom à deux doigts, à la molette ou avec les boutons, déplacement au doigt ou à la souris, double-tap ou double-clic pour recadrer |
 | Saisie, en bas | Champ fixé en bas de l'écran (comme une messagerie), avec des exemples à toucher juste au-dessus |
 | Barre sous le plan | Variantes **A, B, C**, surface et nombre de pièces, bouton **Autres** pour de nouvelles propositions |
+| Modifier | Ajouter ou retirer des pièces, fixer la surface, choisir l'organisation (suite parentale, cuisine fermée…) et la porte de service, puis redessiner : le programme est imposé tel quel au modèle |
 | Détails | Onglets **Surfaces**, **Organisation** (schéma de distribution) et **Vérifications** : volet qui glisse depuis le bas sur téléphone et tablette, panneau latéral sur ordinateur |
 | En haut | **Exporter** (plan en SVG, fond blanc, prêt à imprimer), **Avis** (remarque envoyée à l'auteur par e-mail), **Aide** (mode d'emploi, affiché aussi à la première visite) |
 

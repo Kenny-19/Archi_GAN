@@ -86,7 +86,7 @@ const CELL_M2 = 0.09;
 const isLegal = (a, b) => (ROOM_ADJ[a] || []).includes(b) || (ROOM_ADJ[b] || []).includes(a);
 function isForbidden(a, b, hasCouloir) {
   if (FORBIDDEN.includes([a, b].sort().join("|"))) return true;
-  return hasCouloir && ((a === "toilettes" && b === "salon") || (a === "salon" && b === "toilettes"));
+  return hasCouloir && ((a === "salon" && (b === "toilettes" || b === "douche")) || (b === "salon" && (a === "toilettes" || a === "douche")));
 }
 
 // ---------------------------------------------------------------------
@@ -178,6 +178,11 @@ function parsePrompt(prompt) {
 }
 
 function parseFootprint(prompt) {
+  const fp = parseSurface(prompt);
+  if (/(sans|pas de|aucune) porte (de service|arriere|de derriere)/.test(normalize(prompt))) fp.sansService = true;
+  return fp;
+}
+function parseSurface(prompt) {
   const text = normalize(prompt).replace(/,/g, ".");
   const num = "(\\d+(?:\\.\\d+)?)";
   let m = text.match(new RegExp(num + "\\s*[x×]\\s*" + num +
@@ -422,26 +427,11 @@ function doorCost(a, b, hasC) {
 }
 const loopOk = (a) => !a.graphParent || !a.graphParent.startsWith("couloir") || a.name !== "cuisine";
 
-function doorsTree(placed, grid, gs, hasC) {
-  const contacts = findContacts(placed), parent = placed.map((_, i) => i);
-  const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
-  const doors = [], used = new Set();
-  const sorted = contacts.map((c, k) => ({ c, k, cost: doorCost(placed[c[0]], placed[c[1]], hasC),
-                                           ov: c[2][4] - c[2][3] }))
-    .sort((a, b) => a.cost - b.cost || b.ov - a.ov || a.k - b.k);
-  for (const { c: [i, j, info] } of sorted) {
-    if (find(i) !== find(j)) {
-      parent[find(i)] = find(j);
-      doors.push(makeDoor(info, placed[i].uid, placed[j].uid)); used.add(i + ":" + j);
-    }
-  }
-  for (const [i, j, info] of contacts) {
-    const a = placed[i], b = placed[j];
-    if (!used.has(i + ":" + j) && DAY_ZONE.has(a.name) && DAY_ZONE.has(b.name) &&
-        isLegal(a.name, b.name) && loopOk(a) && loopOk(b))
-      doors.push(makeDoor(info, a.uid, b.uid));
-  }
-  for (const target of ["couloir", "salon"]) {
+const isExterior = (d) => d.rooms[1] === "exterieur";
+// plus long troncon de mur exterieur d'une piece des types `targets` (dans l'ordre)
+function exteriorDoor(placed, grid, gs, targets, doors, minRun = 2) {
+  const busy = new Set(doors.filter(isExterior).map(d => d.orientation + d.pos.join(",")));
+  for (const need of minRun >= 3 ? [3] : [3, 2]) for (const target of targets) {
     let best = null;
     for (const r of placed.filter(q => q.name === target)) {
       const [x, y, w, h] = r.pos, sides = [];
@@ -461,7 +451,42 @@ function doorsTree(placed, grid, gs, hasC) {
         });
       }
     }
-    if (best && best.run >= 3) { doors.push(makeDoor(best.info, best.r.uid, "exterieur", "entree")); break; }
+    if (best && best.run >= need && !busy.has(best.info[0] + makeDoor(best.info, 0, 0).pos.join(","))) return best;
+  }
+  return null;
+}
+
+function doorsTree(placed, grid, gs, hasC, service = true) {
+  const contacts = findContacts(placed), parent = placed.map((_, i) => i);
+  const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+  const doors = [], used = new Set();
+  const sorted = contacts.map((c, k) => ({ c, k, cost: doorCost(placed[c[0]], placed[c[1]], hasC),
+                                           ov: c[2][4] - c[2][3] }))
+    .sort((a, b) => a.cost - b.cost || b.ov - a.ov || a.k - b.k);
+  for (const { c: [i, j, info] } of sorted) {
+    if (find(i) !== find(j)) {
+      parent[find(i)] = find(j);
+      doors.push(makeDoor(info, placed[i].uid, placed[j].uid)); used.add(i + ":" + j);
+    }
+  }
+  for (const [i, j, info] of contacts) {
+    const a = placed[i], b = placed[j];
+    if (!used.has(i + ":" + j) && DAY_ZONE.has(a.name) && DAY_ZONE.has(b.name) &&
+        isLegal(a.name, b.name) && loopOk(a) && loopOk(b))
+      doors.push(makeDoor(info, a.uid, b.uid));
+  }
+  // Porte d'entree : couloir, sinon sejour, sinon cuisine, sur le plus long
+  // mur exterieur (troncon de 3 cellules, a defaut 2). Porte de service :
+  // cuisine donnant sur l'exterieur, sauf si l'entree y est deja.
+  const ent = exteriorDoor(placed, grid, gs, ["couloir", "salon", "cuisine"], doors);
+  if (ent) doors.push(makeDoor(ent.info, ent.r.uid, "exterieur", "entree"));
+  if (service) {
+    const sv = exteriorDoor(placed, grid, gs, ["cuisine"], doors, 3);
+    if (sv && !(ent && ent.r.uid === sv.r.uid)) {
+      // pres d'un angle, pour laisser la place a la fenetre de la cuisine
+      const [o, sd, fx, lo, hi] = sv.info, info = hi - lo >= 4 ? [o, sd, fx, lo + 1, lo + 3] : sv.info;
+      doors.push(makeDoor(info, sv.r.uid, "exterieur", "service"));
+    }
   }
   return doors;
 }
@@ -478,7 +503,7 @@ const LIT_ROOMS = new Set(["salon", "chambre", "bureau", "cuisine"]);
 
 function windowsFor(placed, grid, gs, doors) {
   const inside = (c, r) => c >= 0 && c < gs && r >= 0 && r < gs && grid[r][c] !== null;
-  const entry = doors.find(d => d.kind === "entree");
+  const extDoors = doors.filter(isExterior);
   const out = [];
   for (const r of placed) {
     const spec = WINDOW_SPEC[r.name]; if (!spec) continue;
@@ -489,9 +514,9 @@ function windowsFor(placed, grid, gs, doors) {
       let lo = null;
       for (let k = 0; k <= len; k++) {
         let free = k < len && !inside(...cell(k));
-        if (free && entry && entry.orientation === orient && entry.rooms[0] === r.uid) {
-          const ef = orient === "vertical" ? entry.pos[0] : entry.pos[1], ea = orient === "vertical" ? entry.pos[1] : entry.pos[0];
-          if (ef === fixed && start + k >= ea - 1 && start + k < ea + entry.size + 1) free = false;
+        for (const e of extDoors) if (free && e.orientation === orient && e.rooms[0] === r.uid) {
+          const ef = orient === "vertical" ? e.pos[0] : e.pos[1], ea = orient === "vertical" ? e.pos[1] : e.pos[0];
+          if (ef === fixed && start + k >= ea - 1 && start + k < ea + e.size + 1) free = false;
         }
         if (free && lo === null) lo = k;
         if (!free && lo !== null) { runs.push({ orient, fixed, lo: start + lo, len: k - lo }); lo = null; }
@@ -535,7 +560,7 @@ function isConnected(placed, doors) {
   return seen.size === placed.length;
 }
 function legalDoorRatio(placed, doors) {
-  const ds = doors.filter(d => d.kind !== "entree"); if (!ds.length) return 0;
+  const ds = doors.filter(d => !isExterior(d)); if (!ds.length) return 0;
   const names = Object.fromEntries(placed.map(r => [r.uid, r.name]));
   return ds.filter(d => isLegal(names[d.rooms[0]], names[d.rooms[1]])).length / ds.length;
 }
@@ -595,7 +620,7 @@ const surfaceM2 = (placed) => placed.reduce((s, r) => s + r.pos[2] * r.pos[3], 0
 // ---------------------------------------------------------------------
 // Plan complet (jusqu'a 5 essais, on garde le premier plan valide)
 // ---------------------------------------------------------------------
-function layout(p, topo, target, rng, tries = 5) {
+function layout(p, topo, target, rng, tries = 5, service = true) {
   const gs = gridSizeFor(p, target), scale = areaScale(p, target);
   const hasC = (p.couloir || 0) > 0, total = Object.values(p).reduce((a, b) => a + b, 0);
   let best = null, bestScore = null;
@@ -607,12 +632,12 @@ function layout(p, topo, target, rng, tries = 5) {
     const grid = Array.from({ length: gs }, () => new Array(gs).fill(null));
     for (const r of placed) for (let yy = r.pos[1]; yy < r.pos[1] + r.pos[3]; yy++)
       for (let xx = r.pos[0]; xx < r.pos[0] + r.pos[2]; xx++) grid[yy][xx] = r.uid;
-    const doors = doorsTree(placed, grid, gs, hasC), windows = windowsFor(placed, grid, gs, doors);
+    const doors = doorsTree(placed, grid, gs, hasC, service), windows = windowsFor(placed, grid, gs, doors);
     const score = [Math.min(placed.length, total), isConnected(placed, doors) ? 1 : 0,
-                   -forbiddenDoors(placed, doors, hasC), directAccess(placed, doors),
+                   doors.some(d => d.kind === "entree") ? 1 : 0, -forbiddenDoors(placed, doors, hasC), directAccess(placed, doors),
                    daylightRatio(placed, doors, windows), legalDoorRatio(placed, doors), compactness(placed)];
     if (!best || better(score, bestScore)) { best = { placed, doors, windows, grid, gs }; bestScore = score; }
-    if (score[0] === total && score[1] && score[2] === 0 && score[3] === 1 && score[4] === 1 && score[5] >= 0.9) break;
+    if (score[0] === total && score[1] && score[2] && score[3] === 0 && score[4] === 1 && score[5] === 1 && score[6] >= 0.9) break;
   }
   return best;
 }
@@ -620,14 +645,16 @@ function layout(p, topo, target, rng, tries = 5) {
 function planFromPrompt(model, prompt, opts = {}) {
   const n = opts.n || 1, seed = opts.seed ?? 42, rng = makeRng(seed);
   const t0 = performance.now();
-  const cons = parsePrompt(prompt), fp = parseFootprint(prompt);
+  // opts.cons / opts.surface : programme impose directement (editeur de la page)
+  const cons = opts.cons || parsePrompt(prompt);
+  const fp = opts.cons ? { surface: opts.surface || undefined, sansService: opts.service === false } : parseFootprint(prompt);
   const results = [];
   for (let k = 0; k < n; k++) {
     const t1 = performance.now();
     const { raw, final } = generate(model, cons, rng);
     const t2 = performance.now();
     const { pieces, topo } = vectorToProgram(final);
-    const L = layout(pieces, topo, fp.surface, rng);
+    const L = layout(pieces, topo, fp.surface, rng, 5, !fp.sansService);
     const t3 = performance.now();
     results.push({
       pieces, topo, raw, final, ...L,
@@ -640,11 +667,12 @@ function planFromPrompt(model, prompt, opts = {}) {
 function metricsOf(L, pieces) {
   const hasC = (pieces.couloir || 0) > 0;
   const priv = L.placed.filter(r => PRIVATE.has(r.name)), deg = {};
-  L.doors.filter(d => d.kind !== "entree").forEach(d => d.rooms.forEach(u => deg[u] = (deg[u] || 0) + 1));
+  L.doors.filter(d => !isExterior(d)).forEach(d => d.rooms.forEach(u => deg[u] = (deg[u] || 0) + 1));
   const total = Object.values(pieces).reduce((a, b) => a + b, 0);
   return {
         surface: surfaceM2(L.placed), nbPieces: L.placed.length,
-        portes: L.doors.filter(d => d.kind !== "entree").length,
+        portes: L.doors.filter(d => !isExterior(d)).length,
+        service: L.doors.some(d => d.kind === "service"),
         entree: L.doors.some(d => d.kind === "entree"),
         accesDirect: directAccess(L.placed, L.doors),
         portesInterdites: forbiddenDoors(L.placed, L.doors, hasC),
@@ -698,7 +726,8 @@ function renderSVG(res) {
   };
   const nameOf = Object.fromEntries(placed.map(r => [r.uid, r.name]));
   for (const d of doors) {
-    const [gc, gr] = d.pos, ds = d.size, cls = d.kind === "entree" ? "entry" : "";
+    const [gc, gr] = d.pos, ds = d.size, cls = isExterior(d) ? "entry" : "";
+    const tag = d.kind === "service" ? "SERVICE" : "ENTRÉE";
     const glazed = d.rooms.some(u => nameOf[u] === "balcon");   // porte-fenetre
     if (d.orientation === "vertical") {
       const wx = gc, mid = gr + Math.floor(ds / 2);
@@ -709,7 +738,7 @@ function renderSVG(res) {
       const oc = openv[0] < 0 ? wx - 1 : wx, downOk = isRoom(oc, gr + ds);
       leafArc(downOk ? [wx, gr + ds] : [wx, gr], downOk ? [0, -1] : [0, 1], openv, ds, cls);
       if (cls) { const out = left ? 1 : -1;
-        P.push(`<text x="${f(wx + out * 2.2)}" y="${f(gr + ds / 2)}" class="entry-label" font-size="0.9" transform="rotate(-90 ${f(wx + out * 2.2)} ${f(gr + ds / 2)})" text-anchor="middle" dominant-baseline="middle">ENTRÉE</text>`); }
+        P.push(`<text x="${f(wx + out * 2.2)}" y="${f(gr + ds / 2)}" class="entry-label" font-size="0.9" transform="rotate(-90 ${f(wx + out * 2.2)} ${f(gr + ds / 2)})" text-anchor="middle" dominant-baseline="middle">${tag}</text>`); }
     } else {
       const wy = gr, mid = gc + Math.floor(ds / 2);
       P.push(`<rect x="${gc}" y="${wy - 0.4}" width="${ds}" height="0.8" class="gap"/>`);
@@ -719,7 +748,7 @@ function renderSVG(res) {
       const orow = openv[1] < 0 ? wy - 1 : wy, rightOk = isRoom(gc + ds, orow);
       leafArc(rightOk ? [gc, wy] : [gc + ds, wy], rightOk ? [1, 0] : [-1, 0], openv, ds, cls);
       if (cls) { const out = down ? -1 : 1;
-        P.push(`<text x="${f(gc + ds / 2)}" y="${f(wy + out * 1.8)}" class="entry-label" font-size="0.9" text-anchor="middle" dominant-baseline="middle">ENTRÉE</text>`); }
+        P.push(`<text x="${f(gc + ds / 2)}" y="${f(wy + out * 1.8)}" class="entry-label" font-size="0.9" text-anchor="middle" dominant-baseline="middle">${tag}</text>`); }
     }
   }
   // fenetres : tableau dans l'epaisseur du mur, deux nus et le vitrage au milieu

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Esquisses de logements 2D dessinées à partir d'une phrase, par un GAN conditionnel et un algorithme de placement.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f3ecc8'/%3E%3Cpath d='M5 5h22v22H5zM5 16h12V5M17 16v11' fill='none' stroke='%2326231c' stroke-width='2.5'/%3E%3C/svg%3E">
-<meta name="version" content="2026-10-09 12:02">
+<meta name="version" content="2026-10-09 12:09">
 <title>ArchiGAN-SL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -185,6 +185,28 @@ form.ask:focus-within { border-color: var(--accent); }
 /* observations */
 dialog.obs { width: min(520px, 100%); max-height: 92dvh; border: 0; border-radius: 22px; padding: 0; background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
 dialog.obs::backdrop { background: rgba(10,12,11,.45); }
+dialog.edit form { display: flex; flex-direction: column; max-height: 92dvh; }
+.edit-head { padding: 20px 20px 6px; }
+.edit-head h2 { margin: 0 0 6px; font-size: 1.2rem; }
+.edit-head p { margin: 0; color: var(--muted); font-size: 0.92rem; line-height: 1.45; }
+.edit-body { overflow: auto; padding: 8px 20px 12px; display: grid; gap: 14px; }
+.steppers { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; }
+.steppers li { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.steppers li > span { margin-right: auto; }
+.steppers button { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-size: 1.25rem; line-height: 1; cursor: pointer; color: var(--ink); }
+.steppers button:disabled { opacity: .35; cursor: default; }
+.steppers output { min-width: 1.6em; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.edit-surf { display: flex; align-items: center; gap: 10px; }
+.edit-surf span:first-child { margin-right: auto; }
+.edit-surf input { width: 96px; height: 42px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); padding: 0 12px; font-size: 16px; text-align: right; color: var(--ink); }
+.edit-topo { border: 0; margin: 0; padding: 0; display: grid; gap: 4px; }
+.edit-topo legend { font-weight: 700; padding: 0; margin-bottom: 6px; }
+.edit-topo label, .edit-check { display: flex; align-items: center; gap: 10px; min-height: 40px; cursor: pointer; }
+.edit-topo input, .edit-check input { width: 20px; height: 20px; accent-color: var(--accent); flex: none; }
+.edit-topo label.off { opacity: .45; }
+.edit-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 12px 20px calc(env(safe-area-inset-bottom, 0px) + 14px); border-top: 1px solid var(--line); }
+.chip-btn.solid { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+@media (max-width: 520px) { #again .lbl { display: none; } #again { padding: 0 11px; } }
 .obs-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 4px 20px; }
 .obs-head h2 { margin: 0; font-size: 1.15rem; }
 form.obs { padding: 8px 20px 20px; display: grid; gap: 14px; }
@@ -224,7 +246,10 @@ form.obs a { color: var(--accent); font-weight: 600; }
   .main { padding: 0 8px; }
   .stage { border-radius: 16px; }
   .bar { padding: 8px 10px; gap: 8px; }
-  .summary { order: 3; width: 100%; font-size: 0.9rem; }
+  .bar { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); grid-template-areas: "sum sum sum det" "seg again edit ."; align-items: center; }
+  .summary { grid-area: sum; font-size: 0.9rem; }
+  #variants { grid-area: seg; } #again { grid-area: again; } #open-edit { grid-area: edit; }
+  #open-details { grid-area: det; justify-self: end; }
   .composer { padding-left: 8px; padding-right: 8px; }
   .two { grid-template-columns: minmax(0, 1fr); }
   dialog.obs { margin: auto 0 0; width: 100%; max-width: 100%; border-radius: 22px 22px 0 0; }
@@ -263,7 +288,7 @@ form.obs a { color: var(--accent); font-weight: 600; }
             <h2 id="help-title">Comment ça marche</h2>
             <ol>
               <li><span>1</span><div><strong>Décrivez le logement</strong><p>Dans le champ en bas, écrivez par exemple <em>T3 avec balcon</em> ou <em>2 chambres, cuisine fermée, 70 m²</em>. Vous pouvez aussi toucher un exemple.</p></div></li>
-              <li><span>2</span><div><strong>Envoyez</strong><p>Touchez la flèche : trois plans sont dessinés. Passez de l'un à l'autre avec A, B, C. Zoomez avec deux doigts.</p></div></li>
+              <li><span>2</span><div><strong>Envoyez</strong><p>Touchez la flèche : trois plans sont dessinés. Passez de l'un à l'autre avec A, B, C. Zoomez avec deux doigts. « Modifier » permet d'ajouter ou retirer des pièces et de changer leur organisation.</p></div></li>
               <li><span>3</span><div><strong>Regardez les détails et donnez votre avis</strong><p>« Détails » montre la surface de chaque pièce et les vérifications. « Avis », en haut, envoie une remarque à l'auteur.</p></div></li>
             </ol>
             <button type="button" class="btn" id="help-ok">J'ai compris</button>
@@ -273,8 +298,10 @@ form.obs a { color: var(--accent); font-weight: 600; }
       <div class="bar">
         <div class="seg" id="variants" role="group" aria-label="Variantes"></div>
         <span class="summary" id="summary"></span>
-        <button type="button" class="chip-btn" id="again" title="Proposer d'autres plans pour la même description">
-          <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M14.5 6.5A6 6 0 1 0 15 11M15 3v3.5h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Autres</button>
+        <button type="button" class="chip-btn" id="again" aria-label="Autres plans" title="Proposer d'autres plans pour la même description">
+          <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M14.5 6.5A6 6 0 1 0 15 11M15 3v3.5h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="lbl">Autres</span></button>
+        <button type="button" class="chip-btn" id="open-edit" title="Changer les pièces de ce plan">
+          <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3 15l.6-3.2L12 3.4a1.4 1.4 0 0 1 2 0l.6.6a1.4 1.4 0 0 1 0 2L6.2 14.4 3 15z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>Modifier</button>
         <button type="button" class="chip-btn primary" id="open-details">Détails</button>
       </div>
     </section>
@@ -318,6 +345,20 @@ form.obs a { color: var(--accent); font-weight: 600; }
 </div>
 <div class="scrim" id="scrim" hidden></div>
 
+<dialog class="obs edit" id="edit-dialog" aria-labelledby="edit-title">
+  <form method="dialog" id="edit-form">
+    <div class="edit-head"><h2 id="edit-title">Modifier le plan</h2>
+      <p>Changez le nombre de pièces ou leur organisation, puis redessinez. Le modèle propose trois nouvelles variantes qui respectent exactement vos choix.</p></div>
+    <div class="edit-body">
+      <ul class="steppers" id="edit-rooms"></ul>
+      <label class="edit-surf"><span>Surface visée</span><input id="edit-surface" type="number" inputmode="numeric" min="15" max="400" step="1" placeholder="libre"><span>m²</span></label>
+      <fieldset class="edit-topo"><legend>Organisation</legend><div id="edit-topo"></div></fieldset>
+      <label class="edit-check"><input type="checkbox" id="edit-service" checked> Porte de service sur la cuisine</label>
+    </div>
+    <div class="edit-actions"><button type="button" class="chip-btn" id="edit-cancel">Annuler</button>
+      <button type="submit" class="chip-btn solid" id="edit-apply">Redessiner</button></div>
+  </form>
+</dialog>
 <dialog class="obs" id="obs-dialog" aria-labelledby="obs-title">
   <div class="obs-head"><h2 id="obs-title">Donner votre avis</h2><button type="button" class="icon-btn" id="obs-close" aria-label="Fermer"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button></div>
   <form class="obs" id="obs-form" autocomplete="on">
@@ -429,7 +470,7 @@ const CELL_M2 = 0.09;
 const isLegal = (a, b) => (ROOM_ADJ[a] || []).includes(b) || (ROOM_ADJ[b] || []).includes(a);
 function isForbidden(a, b, hasCouloir) {
   if (FORBIDDEN.includes([a, b].sort().join("|"))) return true;
-  return hasCouloir && ((a === "toilettes" && b === "salon") || (a === "salon" && b === "toilettes"));
+  return hasCouloir && ((a === "salon" && (b === "toilettes" || b === "douche")) || (b === "salon" && (a === "toilettes" || a === "douche")));
 }
 
 // ---------------------------------------------------------------------
@@ -521,6 +562,11 @@ function parsePrompt(prompt) {
 }
 
 function parseFootprint(prompt) {
+  const fp = parseSurface(prompt);
+  if (/(sans|pas de|aucune) porte (de service|arriere|de derriere)/.test(normalize(prompt))) fp.sansService = true;
+  return fp;
+}
+function parseSurface(prompt) {
   const text = normalize(prompt).replace(/,/g, ".");
   const num = "(\\d+(?:\\.\\d+)?)";
   let m = text.match(new RegExp(num + "\\s*[x×]\\s*" + num +
@@ -765,26 +811,11 @@ function doorCost(a, b, hasC) {
 }
 const loopOk = (a) => !a.graphParent || !a.graphParent.startsWith("couloir") || a.name !== "cuisine";
 
-function doorsTree(placed, grid, gs, hasC) {
-  const contacts = findContacts(placed), parent = placed.map((_, i) => i);
-  const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
-  const doors = [], used = new Set();
-  const sorted = contacts.map((c, k) => ({ c, k, cost: doorCost(placed[c[0]], placed[c[1]], hasC),
-                                           ov: c[2][4] - c[2][3] }))
-    .sort((a, b) => a.cost - b.cost || b.ov - a.ov || a.k - b.k);
-  for (const { c: [i, j, info] } of sorted) {
-    if (find(i) !== find(j)) {
-      parent[find(i)] = find(j);
-      doors.push(makeDoor(info, placed[i].uid, placed[j].uid)); used.add(i + ":" + j);
-    }
-  }
-  for (const [i, j, info] of contacts) {
-    const a = placed[i], b = placed[j];
-    if (!used.has(i + ":" + j) && DAY_ZONE.has(a.name) && DAY_ZONE.has(b.name) &&
-        isLegal(a.name, b.name) && loopOk(a) && loopOk(b))
-      doors.push(makeDoor(info, a.uid, b.uid));
-  }
-  for (const target of ["couloir", "salon"]) {
+const isExterior = (d) => d.rooms[1] === "exterieur";
+// plus long troncon de mur exterieur d'une piece des types `targets` (dans l'ordre)
+function exteriorDoor(placed, grid, gs, targets, doors, minRun = 2) {
+  const busy = new Set(doors.filter(isExterior).map(d => d.orientation + d.pos.join(",")));
+  for (const need of minRun >= 3 ? [3] : [3, 2]) for (const target of targets) {
     let best = null;
     for (const r of placed.filter(q => q.name === target)) {
       const [x, y, w, h] = r.pos, sides = [];
@@ -804,7 +835,42 @@ function doorsTree(placed, grid, gs, hasC) {
         });
       }
     }
-    if (best && best.run >= 3) { doors.push(makeDoor(best.info, best.r.uid, "exterieur", "entree")); break; }
+    if (best && best.run >= need && !busy.has(best.info[0] + makeDoor(best.info, 0, 0).pos.join(","))) return best;
+  }
+  return null;
+}
+
+function doorsTree(placed, grid, gs, hasC, service = true) {
+  const contacts = findContacts(placed), parent = placed.map((_, i) => i);
+  const find = (x) => { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; };
+  const doors = [], used = new Set();
+  const sorted = contacts.map((c, k) => ({ c, k, cost: doorCost(placed[c[0]], placed[c[1]], hasC),
+                                           ov: c[2][4] - c[2][3] }))
+    .sort((a, b) => a.cost - b.cost || b.ov - a.ov || a.k - b.k);
+  for (const { c: [i, j, info] } of sorted) {
+    if (find(i) !== find(j)) {
+      parent[find(i)] = find(j);
+      doors.push(makeDoor(info, placed[i].uid, placed[j].uid)); used.add(i + ":" + j);
+    }
+  }
+  for (const [i, j, info] of contacts) {
+    const a = placed[i], b = placed[j];
+    if (!used.has(i + ":" + j) && DAY_ZONE.has(a.name) && DAY_ZONE.has(b.name) &&
+        isLegal(a.name, b.name) && loopOk(a) && loopOk(b))
+      doors.push(makeDoor(info, a.uid, b.uid));
+  }
+  // Porte d'entree : couloir, sinon sejour, sinon cuisine, sur le plus long
+  // mur exterieur (troncon de 3 cellules, a defaut 2). Porte de service :
+  // cuisine donnant sur l'exterieur, sauf si l'entree y est deja.
+  const ent = exteriorDoor(placed, grid, gs, ["couloir", "salon", "cuisine"], doors);
+  if (ent) doors.push(makeDoor(ent.info, ent.r.uid, "exterieur", "entree"));
+  if (service) {
+    const sv = exteriorDoor(placed, grid, gs, ["cuisine"], doors, 3);
+    if (sv && !(ent && ent.r.uid === sv.r.uid)) {
+      // pres d'un angle, pour laisser la place a la fenetre de la cuisine
+      const [o, sd, fx, lo, hi] = sv.info, info = hi - lo >= 4 ? [o, sd, fx, lo + 1, lo + 3] : sv.info;
+      doors.push(makeDoor(info, sv.r.uid, "exterieur", "service"));
+    }
   }
   return doors;
 }
@@ -821,7 +887,7 @@ const LIT_ROOMS = new Set(["salon", "chambre", "bureau", "cuisine"]);
 
 function windowsFor(placed, grid, gs, doors) {
   const inside = (c, r) => c >= 0 && c < gs && r >= 0 && r < gs && grid[r][c] !== null;
-  const entry = doors.find(d => d.kind === "entree");
+  const extDoors = doors.filter(isExterior);
   const out = [];
   for (const r of placed) {
     const spec = WINDOW_SPEC[r.name]; if (!spec) continue;
@@ -832,9 +898,9 @@ function windowsFor(placed, grid, gs, doors) {
       let lo = null;
       for (let k = 0; k <= len; k++) {
         let free = k < len && !inside(...cell(k));
-        if (free && entry && entry.orientation === orient && entry.rooms[0] === r.uid) {
-          const ef = orient === "vertical" ? entry.pos[0] : entry.pos[1], ea = orient === "vertical" ? entry.pos[1] : entry.pos[0];
-          if (ef === fixed && start + k >= ea - 1 && start + k < ea + entry.size + 1) free = false;
+        for (const e of extDoors) if (free && e.orientation === orient && e.rooms[0] === r.uid) {
+          const ef = orient === "vertical" ? e.pos[0] : e.pos[1], ea = orient === "vertical" ? e.pos[1] : e.pos[0];
+          if (ef === fixed && start + k >= ea - 1 && start + k < ea + e.size + 1) free = false;
         }
         if (free && lo === null) lo = k;
         if (!free && lo !== null) { runs.push({ orient, fixed, lo: start + lo, len: k - lo }); lo = null; }
@@ -878,7 +944,7 @@ function isConnected(placed, doors) {
   return seen.size === placed.length;
 }
 function legalDoorRatio(placed, doors) {
-  const ds = doors.filter(d => d.kind !== "entree"); if (!ds.length) return 0;
+  const ds = doors.filter(d => !isExterior(d)); if (!ds.length) return 0;
   const names = Object.fromEntries(placed.map(r => [r.uid, r.name]));
   return ds.filter(d => isLegal(names[d.rooms[0]], names[d.rooms[1]])).length / ds.length;
 }
@@ -938,7 +1004,7 @@ const surfaceM2 = (placed) => placed.reduce((s, r) => s + r.pos[2] * r.pos[3], 0
 // ---------------------------------------------------------------------
 // Plan complet (jusqu'a 5 essais, on garde le premier plan valide)
 // ---------------------------------------------------------------------
-function layout(p, topo, target, rng, tries = 5) {
+function layout(p, topo, target, rng, tries = 5, service = true) {
   const gs = gridSizeFor(p, target), scale = areaScale(p, target);
   const hasC = (p.couloir || 0) > 0, total = Object.values(p).reduce((a, b) => a + b, 0);
   let best = null, bestScore = null;
@@ -950,12 +1016,12 @@ function layout(p, topo, target, rng, tries = 5) {
     const grid = Array.from({ length: gs }, () => new Array(gs).fill(null));
     for (const r of placed) for (let yy = r.pos[1]; yy < r.pos[1] + r.pos[3]; yy++)
       for (let xx = r.pos[0]; xx < r.pos[0] + r.pos[2]; xx++) grid[yy][xx] = r.uid;
-    const doors = doorsTree(placed, grid, gs, hasC), windows = windowsFor(placed, grid, gs, doors);
+    const doors = doorsTree(placed, grid, gs, hasC, service), windows = windowsFor(placed, grid, gs, doors);
     const score = [Math.min(placed.length, total), isConnected(placed, doors) ? 1 : 0,
-                   -forbiddenDoors(placed, doors, hasC), directAccess(placed, doors),
+                   doors.some(d => d.kind === "entree") ? 1 : 0, -forbiddenDoors(placed, doors, hasC), directAccess(placed, doors),
                    daylightRatio(placed, doors, windows), legalDoorRatio(placed, doors), compactness(placed)];
     if (!best || better(score, bestScore)) { best = { placed, doors, windows, grid, gs }; bestScore = score; }
-    if (score[0] === total && score[1] && score[2] === 0 && score[3] === 1 && score[4] === 1 && score[5] >= 0.9) break;
+    if (score[0] === total && score[1] && score[2] && score[3] === 0 && score[4] === 1 && score[5] === 1 && score[6] >= 0.9) break;
   }
   return best;
 }
@@ -963,14 +1029,16 @@ function layout(p, topo, target, rng, tries = 5) {
 function planFromPrompt(model, prompt, opts = {}) {
   const n = opts.n || 1, seed = opts.seed ?? 42, rng = makeRng(seed);
   const t0 = performance.now();
-  const cons = parsePrompt(prompt), fp = parseFootprint(prompt);
+  // opts.cons / opts.surface : programme impose directement (editeur de la page)
+  const cons = opts.cons || parsePrompt(prompt);
+  const fp = opts.cons ? { surface: opts.surface || undefined, sansService: opts.service === false } : parseFootprint(prompt);
   const results = [];
   for (let k = 0; k < n; k++) {
     const t1 = performance.now();
     const { raw, final } = generate(model, cons, rng);
     const t2 = performance.now();
     const { pieces, topo } = vectorToProgram(final);
-    const L = layout(pieces, topo, fp.surface, rng);
+    const L = layout(pieces, topo, fp.surface, rng, 5, !fp.sansService);
     const t3 = performance.now();
     results.push({
       pieces, topo, raw, final, ...L,
@@ -983,11 +1051,12 @@ function planFromPrompt(model, prompt, opts = {}) {
 function metricsOf(L, pieces) {
   const hasC = (pieces.couloir || 0) > 0;
   const priv = L.placed.filter(r => PRIVATE.has(r.name)), deg = {};
-  L.doors.filter(d => d.kind !== "entree").forEach(d => d.rooms.forEach(u => deg[u] = (deg[u] || 0) + 1));
+  L.doors.filter(d => !isExterior(d)).forEach(d => d.rooms.forEach(u => deg[u] = (deg[u] || 0) + 1));
   const total = Object.values(pieces).reduce((a, b) => a + b, 0);
   return {
         surface: surfaceM2(L.placed), nbPieces: L.placed.length,
-        portes: L.doors.filter(d => d.kind !== "entree").length,
+        portes: L.doors.filter(d => !isExterior(d)).length,
+        service: L.doors.some(d => d.kind === "service"),
         entree: L.doors.some(d => d.kind === "entree"),
         accesDirect: directAccess(L.placed, L.doors),
         portesInterdites: forbiddenDoors(L.placed, L.doors, hasC),
@@ -1041,7 +1110,8 @@ function renderSVG(res) {
   };
   const nameOf = Object.fromEntries(placed.map(r => [r.uid, r.name]));
   for (const d of doors) {
-    const [gc, gr] = d.pos, ds = d.size, cls = d.kind === "entree" ? "entry" : "";
+    const [gc, gr] = d.pos, ds = d.size, cls = isExterior(d) ? "entry" : "";
+    const tag = d.kind === "service" ? "SERVICE" : "ENTRÉE";
     const glazed = d.rooms.some(u => nameOf[u] === "balcon");   // porte-fenetre
     if (d.orientation === "vertical") {
       const wx = gc, mid = gr + Math.floor(ds / 2);
@@ -1052,7 +1122,7 @@ function renderSVG(res) {
       const oc = openv[0] < 0 ? wx - 1 : wx, downOk = isRoom(oc, gr + ds);
       leafArc(downOk ? [wx, gr + ds] : [wx, gr], downOk ? [0, -1] : [0, 1], openv, ds, cls);
       if (cls) { const out = left ? 1 : -1;
-        P.push(`<text x="${f(wx + out * 2.2)}" y="${f(gr + ds / 2)}" class="entry-label" font-size="0.9" transform="rotate(-90 ${f(wx + out * 2.2)} ${f(gr + ds / 2)})" text-anchor="middle" dominant-baseline="middle">ENTRÉE</text>`); }
+        P.push(`<text x="${f(wx + out * 2.2)}" y="${f(gr + ds / 2)}" class="entry-label" font-size="0.9" transform="rotate(-90 ${f(wx + out * 2.2)} ${f(gr + ds / 2)})" text-anchor="middle" dominant-baseline="middle">${tag}</text>`); }
     } else {
       const wy = gr, mid = gc + Math.floor(ds / 2);
       P.push(`<rect x="${gc}" y="${wy - 0.4}" width="${ds}" height="0.8" class="gap"/>`);
@@ -1062,7 +1132,7 @@ function renderSVG(res) {
       const orow = openv[1] < 0 ? wy - 1 : wy, rightOk = isRoom(gc + ds, orow);
       leafArc(rightOk ? [gc, wy] : [gc + ds, wy], rightOk ? [1, 0] : [-1, 0], openv, ds, cls);
       if (cls) { const out = down ? -1 : 1;
-        P.push(`<text x="${f(gc + ds / 2)}" y="${f(wy + out * 1.8)}" class="entry-label" font-size="0.9" text-anchor="middle" dominant-baseline="middle">ENTRÉE</text>`); }
+        P.push(`<text x="${f(gc + ds / 2)}" y="${f(wy + out * 1.8)}" class="entry-label" font-size="0.9" text-anchor="middle" dominant-baseline="middle">${tag}</text>`); }
     }
   }
   // fenetres : tableau dans l'epaisseur du mur, deux nus et le vitrage au milieu
@@ -1161,6 +1231,68 @@ const SITE_URL = "https://archigansite.vercel.app";
     prompt.value = b.dataset.p; grow(); run();
   });
   $("again").onclick = () => run();
+
+  // ----- modifier le programme du plan affiché -----
+  const LIMITS = { salon: [1, 1], chambre: [0, 6], douche: [0, 3], toilettes: [0, 2], couloir: [0, 1],
+                   bureau: [0, 1], cuisine: [1, 1], balcon: [0, 1], dressing: [0, 1] };
+  const PLURAL = { salon: "séjours", chambre: "chambres", douche: "salles de bain", toilettes: "WC", couloir: "couloirs",
+                   bureau: "bureaux", cuisine: "cuisines", balcon: "balcons", dressing: "dressings" };
+  const TOPO_NEEDS = { sdb_suite: ["douche", "chambre"], wc_dans_sdb: ["toilettes", "douche"], dressing_suite: ["dressing", "chambre"],
+                       balcon_chambre: ["balcon", "chambre"], cuisine_fermee: ["cuisine", "couloir"], bureau_sejour: ["bureau"] };
+  const TOPO_TEXT = { sdb_suite: "suite parentale", wc_dans_sdb: "WC dans la salle de bain", dressing_suite: "chambre avec dressing",
+                      balcon_chambre: "balcon depuis la chambre", cuisine_fermee: "cuisine fermée", bureau_sejour: "coin bureau" };
+  let edit = null;
+  function drawEdit() {
+    const order = A.GENERATIVE_ROOMS.filter(k => LIMITS[k][0] !== LIMITS[k][1]);
+    $("edit-rooms").innerHTML = order.map(k => `<li><span>${ROOM_FR[k]}</span>` +
+      `<button type="button" data-k="${k}" data-d="-1" aria-label="Retirer : ${ROOM_FR[k]}" ${edit.p[k] <= LIMITS[k][0] ? "disabled" : ""}>−</button>` +
+      `<output aria-live="polite">${edit.p[k]}</output>` +
+      `<button type="button" data-k="${k}" data-d="1" aria-label="Ajouter : ${ROOM_FR[k]}" ${edit.p[k] >= LIMITS[k][1] ? "disabled" : ""}>+</button></li>`).join("");
+    $("edit-topo").innerHTML = A.TOPO_NAMES.map(k => {
+      const ok = TOPO_NEEDS[k].every(n => edit.p[n] > 0);
+      return `<label class="${ok ? "" : "off"}"><input type="checkbox" data-t="${k}" ${ok && edit.t[k] ? "checked" : ""} ${ok ? "" : "disabled"}> ${TOPO_FR[k]}</label>`;
+    }).join("");
+  }
+  $("open-edit").onclick = () => {
+    if (!state) return;
+    const r = state.results[current], p = {}, t = {};
+    A.GENERATIVE_ROOMS.forEach(k => p[k] = Math.min(LIMITS[k][1], Math.max(LIMITS[k][0], r.pieces[k] || 0)));
+    A.TOPO_NAMES.forEach(k => t[k] = r.topo[k] ? 1 : 0);
+    edit = { p, t };
+    $("edit-surface").value = state.footprint.surface ? Math.round(state.footprint.surface) : "";
+    $("edit-service").checked = !state.footprint.sansService;
+    drawEdit(); $("edit-dialog").showModal();
+  };
+  $("edit-rooms").addEventListener("click", (ev) => {
+    const b = ev.target.closest("button[data-k]"); if (!b) return;
+    const k = b.dataset.k, [lo, hi] = LIMITS[k];
+    edit.p[k] = Math.min(hi, Math.max(lo, edit.p[k] + +b.dataset.d)); drawEdit();
+    const again = $("edit-rooms").querySelector(`button[data-k="${k}"][data-d="${b.dataset.d}"]`);
+    if (again && !again.disabled) again.focus();
+  });
+  $("edit-topo").addEventListener("change", (ev) => { const c = ev.target.closest("input[data-t]"); if (c) edit.t[c.dataset.t] = c.checked ? 1 : 0; });
+  $("edit-cancel").onclick = () => $("edit-dialog").close();
+  $("edit-form").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const p = edit.p, cons = A.GENERATIVE_ROOMS.map(k => p[k])
+      .concat(A.TOPO_NAMES.map(k => TOPO_NEEDS[k].every(n => p[n] > 0) ? edit.t[k] : 0));
+    const surf = parseFloat($("edit-surface").value) || null, service = $("edit-service").checked;
+    const words = [], SHORTW = { chambre: ["chambre", "chambres"], douche: ["sdb", "sdb"], toilettes: ["wc", "wc"],
+      couloir: ["couloir", "couloirs"], bureau: ["bureau", "bureaux"], balcon: ["balcon", "balcons"], dressing: ["dressing", "dressings"] };
+    for (const k of A.GENERATIVE_ROOMS) {
+      if (!SHORTW[k]) continue;
+      if (p[k] > 1) words.push(`${p[k]} ${SHORTW[k][1]}`);
+      else if (p[k] === 1) words.push(`1 ${SHORTW[k][0]}`);
+      else words.push(`sans ${SHORTW[k][0]}`);
+    }
+    A.TOPO_NAMES.forEach((k, i) => { if (cons[A.GENERATIVE_ROOMS.length + i]) words.push(TOPO_TEXT[k]); });
+    if (!service) words.push("sans porte de service");
+    if (surf) words.push(`${Math.round(surf)} m²`);
+    const text = words.join(", ");
+    prompt.value = text; grow();
+    state = A.planFromPrompt(MODEL, text, { n: 3, seed: Math.floor(Math.random() * 1e9), cons, surface: surf, service });
+    current = 0; render(); $("edit-dialog").close();
+  });
 
   function run() {
     const p = prompt.value.trim() || "T3";
@@ -1301,6 +1433,7 @@ const SITE_URL = "https://archigansite.vercel.app";
       ["On ne traverse ni chambre ni salle de bain", ck(m.accesDirect >= 0.999)],
       ["Aucune porte mal placée (WC sur cuisine…)", ck(m.portesInterdites === 0)],
       ["Porte d'entrée", ck(m.entree, "Présente", "Absente")],
+      ["Porte de service (cuisine)", `<span>${m.service ? "Oui" : "Non"}</span>`],
       ["Pièces de vie éclairées (fenêtre ou balcon)", ck(m.eclairement >= 0.999, "Toutes", Math.round(m.eclairement * 100) + " %")],
       ["Surface demandée", `<span>${state.footprint.surface ? fmt(state.footprint.surface, 0) + " m²" : "non précisée"}</span>`],
     ].map(([k, v]) => `<li><span>${k}</span>${v}</li>`).join("");

@@ -177,6 +177,28 @@ form.ask:focus-within { border-color: var(--accent); }
 /* observations */
 dialog.obs { width: min(520px, 100%); max-height: 92dvh; border: 0; border-radius: 22px; padding: 0; background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
 dialog.obs::backdrop { background: rgba(10,12,11,.45); }
+dialog.edit form { display: flex; flex-direction: column; max-height: 92dvh; }
+.edit-head { padding: 20px 20px 6px; }
+.edit-head h2 { margin: 0 0 6px; font-size: 1.2rem; }
+.edit-head p { margin: 0; color: var(--muted); font-size: 0.92rem; line-height: 1.45; }
+.edit-body { overflow: auto; padding: 8px 20px 12px; display: grid; gap: 14px; }
+.steppers { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; }
+.steppers li { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.steppers li > span { margin-right: auto; }
+.steppers button { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-size: 1.25rem; line-height: 1; cursor: pointer; color: var(--ink); }
+.steppers button:disabled { opacity: .35; cursor: default; }
+.steppers output { min-width: 1.6em; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.edit-surf { display: flex; align-items: center; gap: 10px; }
+.edit-surf span:first-child { margin-right: auto; }
+.edit-surf input { width: 96px; height: 42px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); padding: 0 12px; font-size: 16px; text-align: right; color: var(--ink); }
+.edit-topo { border: 0; margin: 0; padding: 0; display: grid; gap: 4px; }
+.edit-topo legend { font-weight: 700; padding: 0; margin-bottom: 6px; }
+.edit-topo label, .edit-check { display: flex; align-items: center; gap: 10px; min-height: 40px; cursor: pointer; }
+.edit-topo input, .edit-check input { width: 20px; height: 20px; accent-color: var(--accent); flex: none; }
+.edit-topo label.off { opacity: .45; }
+.edit-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 12px 20px calc(env(safe-area-inset-bottom, 0px) + 14px); border-top: 1px solid var(--line); }
+.chip-btn.solid { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+@media (max-width: 520px) { #again .lbl { display: none; } #again { padding: 0 11px; } }
 .obs-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 4px 20px; }
 .obs-head h2 { margin: 0; font-size: 1.15rem; }
 form.obs { padding: 8px 20px 20px; display: grid; gap: 14px; }
@@ -216,7 +238,10 @@ form.obs a { color: var(--accent); font-weight: 600; }
   .main { padding: 0 8px; }
   .stage { border-radius: 16px; }
   .bar { padding: 8px 10px; gap: 8px; }
-  .summary { order: 3; width: 100%; font-size: 0.9rem; }
+  .bar { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); grid-template-areas: "sum sum sum det" "seg again edit ."; align-items: center; }
+  .summary { grid-area: sum; font-size: 0.9rem; }
+  #variants { grid-area: seg; } #again { grid-area: again; } #open-edit { grid-area: edit; }
+  #open-details { grid-area: det; justify-self: end; }
   .composer { padding-left: 8px; padding-right: 8px; }
   .two { grid-template-columns: minmax(0, 1fr); }
   dialog.obs { margin: auto 0 0; width: 100%; max-width: 100%; border-radius: 22px 22px 0 0; }
@@ -252,7 +277,7 @@ form.obs a { color: var(--accent); font-weight: 600; }
             <h2 id="help-title">Comment ça marche</h2>
             <ol>
               <li><span>1</span><div><strong>Décrivez le logement</strong><p>Dans le champ en bas, écrivez par exemple <em>T3 avec balcon</em> ou <em>2 chambres, cuisine fermée, 70 m²</em>. Vous pouvez aussi toucher un exemple.</p></div></li>
-              <li><span>2</span><div><strong>Envoyez</strong><p>Touchez la flèche : trois plans sont dessinés. Passez de l'un à l'autre avec A, B, C. Zoomez avec deux doigts.</p></div></li>
+              <li><span>2</span><div><strong>Envoyez</strong><p>Touchez la flèche : trois plans sont dessinés. Passez de l'un à l'autre avec A, B, C. Zoomez avec deux doigts. « Modifier » permet d'ajouter ou retirer des pièces et de changer leur organisation.</p></div></li>
               <li><span>3</span><div><strong>Regardez les détails et donnez votre avis</strong><p>« Détails » montre la surface de chaque pièce et les vérifications. « Avis », en haut, envoie une remarque à l'auteur.</p></div></li>
             </ol>
             <button type="button" class="btn" id="help-ok">J'ai compris</button>
@@ -262,8 +287,10 @@ form.obs a { color: var(--accent); font-weight: 600; }
       <div class="bar">
         <div class="seg" id="variants" role="group" aria-label="Variantes"></div>
         <span class="summary" id="summary"></span>
-        <button type="button" class="chip-btn" id="again" title="Proposer d'autres plans pour la même description">
-          <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M14.5 6.5A6 6 0 1 0 15 11M15 3v3.5h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Autres</button>
+        <button type="button" class="chip-btn" id="again" aria-label="Autres plans" title="Proposer d'autres plans pour la même description">
+          <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M14.5 6.5A6 6 0 1 0 15 11M15 3v3.5h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="lbl">Autres</span></button>
+        <button type="button" class="chip-btn" id="open-edit" title="Changer les pièces de ce plan">
+          <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M3 15l.6-3.2L12 3.4a1.4 1.4 0 0 1 2 0l.6.6a1.4 1.4 0 0 1 0 2L6.2 14.4 3 15z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>Modifier</button>
         <button type="button" class="chip-btn primary" id="open-details">Détails</button>
       </div>
     </section>
@@ -307,6 +334,20 @@ form.obs a { color: var(--accent); font-weight: 600; }
 </div>
 <div class="scrim" id="scrim" hidden></div>
 
+<dialog class="obs edit" id="edit-dialog" aria-labelledby="edit-title">
+  <form method="dialog" id="edit-form">
+    <div class="edit-head"><h2 id="edit-title">Modifier le plan</h2>
+      <p>Changez le nombre de pièces ou leur organisation, puis redessinez. Le modèle propose trois nouvelles variantes qui respectent exactement vos choix.</p></div>
+    <div class="edit-body">
+      <ul class="steppers" id="edit-rooms"></ul>
+      <label class="edit-surf"><span>Surface visée</span><input id="edit-surface" type="number" inputmode="numeric" min="15" max="400" step="1" placeholder="libre"><span>m²</span></label>
+      <fieldset class="edit-topo"><legend>Organisation</legend><div id="edit-topo"></div></fieldset>
+      <label class="edit-check"><input type="checkbox" id="edit-service" checked> Porte de service sur la cuisine</label>
+    </div>
+    <div class="edit-actions"><button type="button" class="chip-btn" id="edit-cancel">Annuler</button>
+      <button type="submit" class="chip-btn solid" id="edit-apply">Redessiner</button></div>
+  </form>
+</dialog>
 <dialog class="obs" id="obs-dialog" aria-labelledby="obs-title">
   <div class="obs-head"><h2 id="obs-title">Donner votre avis</h2><button type="button" class="icon-btn" id="obs-close" aria-label="Fermer"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button></div>
   <form class="obs" id="obs-form" autocomplete="on">
@@ -373,6 +414,68 @@ const SITE_URL = "https://archigansite.vercel.app";
     prompt.value = b.dataset.p; grow(); run();
   });
   $("again").onclick = () => run();
+
+  // ----- modifier le programme du plan affiché -----
+  const LIMITS = { salon: [1, 1], chambre: [0, 6], douche: [0, 3], toilettes: [0, 2], couloir: [0, 1],
+                   bureau: [0, 1], cuisine: [1, 1], balcon: [0, 1], dressing: [0, 1] };
+  const PLURAL = { salon: "séjours", chambre: "chambres", douche: "salles de bain", toilettes: "WC", couloir: "couloirs",
+                   bureau: "bureaux", cuisine: "cuisines", balcon: "balcons", dressing: "dressings" };
+  const TOPO_NEEDS = { sdb_suite: ["douche", "chambre"], wc_dans_sdb: ["toilettes", "douche"], dressing_suite: ["dressing", "chambre"],
+                       balcon_chambre: ["balcon", "chambre"], cuisine_fermee: ["cuisine", "couloir"], bureau_sejour: ["bureau"] };
+  const TOPO_TEXT = { sdb_suite: "suite parentale", wc_dans_sdb: "WC dans la salle de bain", dressing_suite: "chambre avec dressing",
+                      balcon_chambre: "balcon depuis la chambre", cuisine_fermee: "cuisine fermée", bureau_sejour: "coin bureau" };
+  let edit = null;
+  function drawEdit() {
+    const order = A.GENERATIVE_ROOMS.filter(k => LIMITS[k][0] !== LIMITS[k][1]);
+    $("edit-rooms").innerHTML = order.map(k => `<li><span>${ROOM_FR[k]}</span>` +
+      `<button type="button" data-k="${k}" data-d="-1" aria-label="Retirer : ${ROOM_FR[k]}" ${edit.p[k] <= LIMITS[k][0] ? "disabled" : ""}>−</button>` +
+      `<output aria-live="polite">${edit.p[k]}</output>` +
+      `<button type="button" data-k="${k}" data-d="1" aria-label="Ajouter : ${ROOM_FR[k]}" ${edit.p[k] >= LIMITS[k][1] ? "disabled" : ""}>+</button></li>`).join("");
+    $("edit-topo").innerHTML = A.TOPO_NAMES.map(k => {
+      const ok = TOPO_NEEDS[k].every(n => edit.p[n] > 0);
+      return `<label class="${ok ? "" : "off"}"><input type="checkbox" data-t="${k}" ${ok && edit.t[k] ? "checked" : ""} ${ok ? "" : "disabled"}> ${TOPO_FR[k]}</label>`;
+    }).join("");
+  }
+  $("open-edit").onclick = () => {
+    if (!state) return;
+    const r = state.results[current], p = {}, t = {};
+    A.GENERATIVE_ROOMS.forEach(k => p[k] = Math.min(LIMITS[k][1], Math.max(LIMITS[k][0], r.pieces[k] || 0)));
+    A.TOPO_NAMES.forEach(k => t[k] = r.topo[k] ? 1 : 0);
+    edit = { p, t };
+    $("edit-surface").value = state.footprint.surface ? Math.round(state.footprint.surface) : "";
+    $("edit-service").checked = !state.footprint.sansService;
+    drawEdit(); $("edit-dialog").showModal();
+  };
+  $("edit-rooms").addEventListener("click", (ev) => {
+    const b = ev.target.closest("button[data-k]"); if (!b) return;
+    const k = b.dataset.k, [lo, hi] = LIMITS[k];
+    edit.p[k] = Math.min(hi, Math.max(lo, edit.p[k] + +b.dataset.d)); drawEdit();
+    const again = $("edit-rooms").querySelector(`button[data-k="${k}"][data-d="${b.dataset.d}"]`);
+    if (again && !again.disabled) again.focus();
+  });
+  $("edit-topo").addEventListener("change", (ev) => { const c = ev.target.closest("input[data-t]"); if (c) edit.t[c.dataset.t] = c.checked ? 1 : 0; });
+  $("edit-cancel").onclick = () => $("edit-dialog").close();
+  $("edit-form").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const p = edit.p, cons = A.GENERATIVE_ROOMS.map(k => p[k])
+      .concat(A.TOPO_NAMES.map(k => TOPO_NEEDS[k].every(n => p[n] > 0) ? edit.t[k] : 0));
+    const surf = parseFloat($("edit-surface").value) || null, service = $("edit-service").checked;
+    const words = [], SHORTW = { chambre: ["chambre", "chambres"], douche: ["sdb", "sdb"], toilettes: ["wc", "wc"],
+      couloir: ["couloir", "couloirs"], bureau: ["bureau", "bureaux"], balcon: ["balcon", "balcons"], dressing: ["dressing", "dressings"] };
+    for (const k of A.GENERATIVE_ROOMS) {
+      if (!SHORTW[k]) continue;
+      if (p[k] > 1) words.push(`${p[k]} ${SHORTW[k][1]}`);
+      else if (p[k] === 1) words.push(`1 ${SHORTW[k][0]}`);
+      else words.push(`sans ${SHORTW[k][0]}`);
+    }
+    A.TOPO_NAMES.forEach((k, i) => { if (cons[A.GENERATIVE_ROOMS.length + i]) words.push(TOPO_TEXT[k]); });
+    if (!service) words.push("sans porte de service");
+    if (surf) words.push(`${Math.round(surf)} m²`);
+    const text = words.join(", ");
+    prompt.value = text; grow();
+    state = A.planFromPrompt(MODEL, text, { n: 3, seed: Math.floor(Math.random() * 1e9), cons, surface: surf, service });
+    current = 0; render(); $("edit-dialog").close();
+  });
 
   function run() {
     const p = prompt.value.trim() || "T3";
@@ -513,6 +616,7 @@ const SITE_URL = "https://archigansite.vercel.app";
       ["On ne traverse ni chambre ni salle de bain", ck(m.accesDirect >= 0.999)],
       ["Aucune porte mal placée (WC sur cuisine…)", ck(m.portesInterdites === 0)],
       ["Porte d'entrée", ck(m.entree, "Présente", "Absente")],
+      ["Porte de service (cuisine)", `<span>${m.service ? "Oui" : "Non"}</span>`],
       ["Pièces de vie éclairées (fenêtre ou balcon)", ck(m.eclairement >= 0.999, "Toutes", Math.round(m.eclairement * 100) + " %")],
       ["Surface demandée", `<span>${state.footprint.surface ? fmt(state.footprint.surface, 0) + " m²" : "non précisée"}</span>`],
     ].map(([k, v]) => `<li><span>${k}</span>${v}</li>`).join("");
